@@ -19,7 +19,7 @@ newPackage(
 )
 
 
---path=prepend("/Users/jo/Documents/GoodGit/EuclideanDistanceDegree",path)
+--path=prepend("/Users/turtle/Documents/GoodGit/EuclideanDistanceDegree",path)
 --loadPackage("EuclideanDistanceDegree",Reload=>true)
 
 
