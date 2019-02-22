@@ -138,7 +138,23 @@ R=QQ[x0,x1,x2,x3]
 I=ideal sum apply(gens R,i->i^3);
 
 
-conormal
+R=QQ[x,y,z]
+F={x^2*y*z + x^2*z^2 - y^3*z - y^3 }
+determinantalUnitEuclideanDistanceDegree(F)--15
+primaryDecomposition ideal singularLocus ideal F
+CV=conormalVariety(ideal F);
+
+R=QQ[y,z]
+gens coefficientRing R
 
 
 
+---ED degree Equation 3.6
+R=QQ[s,t]
+sectionalEDdegree=(m,n,d1,d2,j)->(    
+    diff(t^(m-2)*s^(n-2),
+	4*(1+t)^m*(1+s)^n*(t+s)^j*sum(apply(d1+1,i->(-2*t)^i))*sum(apply(d2+1,i->(-2*s)^i))
+	  ))
+
+(m,n,d1,d2,jjj)=(5,5,10,10,0)
+sectionalEDdegree(m,n,d1,d2,jjj)
