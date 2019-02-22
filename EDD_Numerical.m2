@@ -24,6 +24,10 @@ startEDDegree(String,List,List,List):= o->(theDir,F,G,L)->(--F is the model, V(G
     then weight=apply(numX,i->1_CC) else weight=o#Weight;
 --
     kk:=(coefficientRing theR);
+    extraVars:= kk;   
+    while class kk===PolynomialRing do (
+	kk=(coefficientRing kk);
+	extraVars=extraVars|gens kk);
     if class kk=!=ComplexField then "Error: coefficient ring needs to be a ComplexField. ";
     S:=theR**kk[apply(#L+#G+1,i->"L"|i)]**kk[apply(numX,i->"u"|i)]**kk[apply(numX,i->"w"|i)]**kk["numerHB","denomQ"]**kk[apply(numX-1,i->"gam"|i)]**kk["TL"];
     xList:=flatten entries basis(  {1,0,0,0,0,0,0},S);
@@ -203,6 +207,23 @@ startEDDegree(storeBM2Files,F,G,L,Weight=>"Unit")
 runBertiniStartEDDegree(storeBM2Files,#F)--9
 startEDDegree(storeBM2Files,F,G,L,Weight=>"Generic")
 runBertiniStartEDDegree(storeBM2Files,#F)--13
+
+
+---
+xVars=flatten apply(5,i->apply(5,j->value("x"|i|j)))
+R=CC[xVars];
+M=genericMatrix(R,5,5)
+F=flatten entries gens minors(3,M)
+--G=apply(5-2,i->apply(5-2,j->({0,1,2}+{i,i,i},{0,1,2}+{j,j,j})))
+G=flatten apply(5-2,i->apply(5-2,j->det submatrix(M,{0,1,2}+{i,i,i},{0,1,2}+{j,j,j})))
+--L={random({1},R)}
+L={}
+startEDDegree(storeBM2Files,F,G,{},Weight=>"Unit")
+runBertiniStartEDDegree(storeBM2Files,#F)--5 choose 2
+
+startEDDegree(storeBM2Files,F,G,L,Weight=>"Generic")
+runBertiniStartEDDegree(storeBM2Files,#F)--
+
 
 
 
