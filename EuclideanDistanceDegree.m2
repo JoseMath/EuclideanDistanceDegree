@@ -152,9 +152,37 @@ gens coefficientRing R
 ---ED degree Equation 3.6
 R=QQ[s,t]
 sectionalEDdegree=(m,n,d1,d2,j)->(    
-    diff(t^(m-2)*s^(n-2),
-	4*(1+t)^m*(1+s)^n*(t+s)^j*sum(apply(d1+1,i->(-2*t)^i))*sum(apply(d2+1,i->(-2*s)^i))
-	  ))
+    L:= 4*(1+t)^m*(1+s)^n*(t+s)^j*sum(apply(d1+1,i->(-2*t)^i))*sum(apply(d2+1,i->(-2*s)^i));
+    L=diff(t^(m-2)*s^(n-2),L);
+    L=sub(L,{t=>0,s=>0});
+    L=1/((m-2)!)*1/((n-2)!)*L	  
+	  )
 
-(m,n,d1,d2,jjj)=(5,5,10,10,0)
+(m,n,d1,d2,jjj)=(5,5,20,20,2)
 sectionalEDdegree(m,n,d1,d2,jjj)
+
+
+
+R=QQ[x,y,z,w]
+F={det genericMatrix(R,2,2) -1}
+determinantalUnitEuclideanDistanceDegree(F)
+leftKernelGenericEDDegree(storeBM2Files,1,F)
+runBertiniEDDegree(storeBM2Files)
+
+leftKernelUnitEDDegree(storeBM2Files,1,F)
+runBertiniEDDegree(storeBM2Files)
+primaryDecomposition ideal singularLocus ideal F
+CV=conormalVariety(ideal F);
+
+
+---
+nSize=4
+R=QQ[a_(1,1)..a_(nSize,nSize)]
+F={det genericMatrix(R,nSize,nSize) -1}
+determinantalUnitEuclideanDistanceDegree(F)
+nSize/2*2^nSize
+determinantalGenericEuclideanDistanceDegree(F)
+
+--Generic case: {8,120}
+leftKernelGenericEDDegree(storeBM2Files,1,F)
+runBertiniEDDegree(storeBM2Files)

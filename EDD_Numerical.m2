@@ -225,9 +225,25 @@ startEDDegree(storeBM2Files,F,G,L,Weight=>"Generic")
 runBertiniStartEDDegree(storeBM2Files,#F)--
 
 
+R=QQ[t]
 
 
 
 
 
 
+---
+--[EX 1] 
+R=QQ[x,y];
+F={x^4+y^4-1}
+G=F
+L={}
+apropos "EDD"
+determinantalUnitEuclideanDistanceDegree(F)
+determinantalGenericEuclideanDistanceDegree(F)
+leftKernelUnitEDDegree(storeBM2Files,1,F)
+runBertiniEDDegree(storeBM2Files)
+
+symbolicWeightEDDegree
+startEDDegree(storeBM2Files,F,G,L,Weight=>"Generic")
+runBertiniStartEDDegree(storeBM2Files,#F)--10
