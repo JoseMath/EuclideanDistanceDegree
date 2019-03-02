@@ -19,7 +19,7 @@ newPackage(
 )
 
 
---path=prepend("/Users/turtle/Documents/GoodGit/EuclideanDistanceDegree",path)
+--path=prepend("/Users/jo/Documents/GoodGit/EuclideanDistanceDegree",path)
 --loadPackage("EuclideanDistanceDegree",Reload=>true)
 
 
@@ -92,7 +92,7 @@ makeJac=(system,unknowns)->(--it is a list of lists of partial derivatives of a 
 
 beginDocumentation()
 
---load "./EuclideanDistanceDegree/DOC.m2";
+load "./DOC_EDD.m2";
 
 TEST///
 --load concatenate(MultiprojectiveWitnessSets#"source directory","./AEO/TST/Example1.tst.m2")
@@ -183,6 +183,6 @@ determinantalUnitEuclideanDistanceDegree(F)
 nSize/2*2^nSize
 determinantalGenericEuclideanDistanceDegree(F)
 
---Generic case: {8,120}
+{8,120}
 leftKernelGenericEDDegree(storeBM2Files,1,F)
 runBertiniEDDegree(storeBM2Files)
