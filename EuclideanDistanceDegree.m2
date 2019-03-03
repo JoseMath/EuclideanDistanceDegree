@@ -58,7 +58,9 @@ export {
 --
     "filterSolutionFile",
 --Options
-    "Data","Weight","UseRegeneration","TargetSlice"
+    "Data","Weight","UseRegeneration","TargetSlice",
+    "numericWeightEDDegree",
+    "numericUnitEDDegree"    
         }
 
 

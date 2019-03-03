@@ -33,6 +33,7 @@ projectiveEDDegree=method(Options=>{
 	"TargetWeight"=>null,
 	"TargetData"=>null,
 	"TargetIndex"=>null	})
+projectiveEDDegree(EDDegreeParameterHomotopyOptions)
 projectiveEDDegree=(theDir,G,F,L,weight,data)->(
     theR:=ring first F;
     numX:=#gens theR;

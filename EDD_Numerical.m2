@@ -71,7 +71,7 @@ startEDDegree(NumericalComputationOptions,Sequence,ZZ):=(NCO,TP,stage)->(
 --Now we extract information from NCO.
 --First the model and submodel constraints
 ------F is the model, V(G)\cap V(L) is a complete intersection contained in V(F)\cap V(L).
-    (theDir,F,G,startL,targetL):=(NCO#"Directory",NCO#"Model",NCO#"WitnessModel",NCO#"StartSubmodel",NCO#"TargetSubmodel");
+    (F,G,startL,targetL):=(NCO#"Model",NCO#"WitnessModel",NCO#"StartSubmodel",NCO#"TargetSubmodel");
     (startData,startWeight,targetData,targetWeight):=(NCO#"StartData",NCO#"StartWeight",NCO#"TargetData",NCO#"TargetWeight");
     (jacStartL,jacTargetL,jacG):=(NCO#"JacobianStartSubmodel",NCO#"JacobianTargetSubmodel",NCO#"JacobianWitnessModel");
     nc:=numcols jacStartL;
@@ -212,7 +212,6 @@ startEDDegree(NCO,(0,0,0),1)
 runBertiniStartEDDegree(storeBM2Files,#F,NCO)
 NCO#"TrackSolutions"
 peek NCO
-
 *-
 
 runBertiniStartEDDegree=method(Options=>{})
@@ -742,6 +741,30 @@ startEDDegree(NCO,(0,0,1),stage)
 runBertiniStartEDDegree(storeBM2Files,#F,NCO)
 readFile(storeBM2Files,"inputCriticalPointSuperSet",10000)
 *-
+
+(stageOne,stageTwo)=(1,2);
+numericWeightEDDegree=method()
+numericWeightEDDegree(List,List,List,List):=(F,G,L,WV)->(
+    NCO:=newNumericalComputationOptions(storeBM2Files,(F,G,L));
+    NCO#"StartWeight"=WV;
+    homotopyType:=(0,0,0);
+    startEDDegree(NCO,homotopyType,stageOne);
+    return runBertiniStartEDDegree(#F,NCO)    
+    )
+
+numericWeightEDDegree(List,List,List):=(F,G,WV)->numericWeightEDDegree(F,G,{},WV)
+numericWeightEDDegree(List,List):=(F,G)->(
+    WV:=apply(#gens ring first F,i->random CC);
+    numericWeightEDDegree(F,G,WV))
+
+numericUnitEDDegree=method()
+numericUnitEDDegree(List,List,List):=(F,G,L)->(
+    WV:=apply(#gens ring first F,i->1);
+    numericWeightEDDegree(F,G,L,WV))
+numericUnitEDDegree(List,List):=(F,G)->numericUnitEDDegree(F,G,{})
+
+
+
 
     
 end

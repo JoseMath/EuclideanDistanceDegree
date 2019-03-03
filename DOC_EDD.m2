@@ -1,5 +1,5 @@
 
-doc /// --MultiaffineDimension  
+doc /// --EuclideanDistanceDegree  
     Key
         EuclideanDistanceDegree 
     Headline
@@ -8,13 +8,13 @@ doc /// --MultiaffineDimension
       Text
         This package provides several routines for determining the Euclidean distance degree of an algebraic variety.
       Text
-      	The (unit) ED degree of the circle using symbolic computation. 		 
+      	Using symbolic computation, this code computes the (unit) ED degree of a circle. 		 
       Example
     	R=QQ[x,y];
 	F={x^2+y^2-1};
 	2==determinantalUnitEuclideanDistanceDegree(F)
       Text
-      	The (unit) ED degree of the circle using numerical computation. 		 
+      	Using numeric computation, this code computes the (unit) ED degree of a circle. 		 
       Example
     	R=QQ[x,y];
 	F={x^2+y^2-1};	c=1;
@@ -38,10 +38,65 @@ doc /// --MultiaffineDimension
 	dataVector={5,7}
 	4==symbolicWeightEDDegree(F,dataVector,genericWeightVector)
 	2==symbolicWeightEDDegree(F,dataVector,unitWeightVector)		
+      Text
+      	When the variety is an affine cone, one is able to compute ED degrees using ED degree homotopies.
+	The easiest case is when the variety is a hypersurface (or more generally, a complete intersection)  
+      Example
+        R=QQ[x1,x2,x3,x4]
+	F={det genericMatrix(R,2,2)};
+    	F=G--when F defines a complete intersection we may take F=G
+	numericWeightEDDegree(F,G)
+	numericUnitEDDegree(F,G)
+      Text
+      	When an affine cone is not a complete intersection we use membership tests to compute ED Degrees.
+	Here V(F) is an irreducible component of V(G) (a reducible variety) and #G===codim ideal F.
+	These methods employ an equation by equation method called regeneration. 
+      Example
+        R=QQ[x1,x2,x3,x4,x5,x6]
+	F=(minors(2,genericMatrix(R,3,2)))_*;
+    	G=drop(F,-1);	
+    	#G==codim ideal F;
+	10==numericWeightEDDegree(F,G)
+      Text
+      	One may also determine (Unit) ED degrees using a parameter homotopy. 
+      Example
+        R=QQ[x1,x2,x3,x4,x5,x6]
+	F=(minors(2,genericMatrix(R,3,2)))_*;
+    	G=drop(F,-1);	
+    	#G==codim ideal F;
+	10==numericWeightEDDegree(F,G)
+	2==numericUnitEDDegree(F,G)
+	2==numericUnitEDDegree(F,G)
+
 ///;
 
 
 end
+
+NCO#"StartWeight"=apply(#gens ring first F,i->1)
+startEDDegree(NCO,(0,0,0),1)
+runBertiniStartEDDegree(storeBM2Files,#F,NCO)
+NCO#"TrackSolutions"
+peek NCO
+   	printingPrecision=100
+	F=flatten entries gens minors(2,transpose genericMatrix(R,3,2))
+	G=drop(F,-1)
+L={}
+NCO=newNumericalComputationOptions(theDir,(F,G))
+NCO#"StartWeight"=apply(#gens ring first F,i->1)
+startEDDegree(NCO,(0,0,1),1)
+runBertiniStartEDDegree(#F,NCO)
+filterSolutionFile(theDir,"start",#gens ring first F+1+#G+#L,NCO)     
+readFile("start",1000)
+
+	F={det genericMatrix(R,2,2)};
+	genericWeightVector={2,3,1,5}
+	unitWeightVector={1,1,1,1}
+	dataVector={5,1,11,13}
+	
+	4==symbolicWeightEDDegree(F,dataVector,genericWeightVector)
+	2==symbolicWeightEDDegree(F,dataVector,unitWeightVector)		
+
 restart
 loadPackage("EuclideanDistanceDegree",Reload=>true)
 help EuclideanDistanceDegree
