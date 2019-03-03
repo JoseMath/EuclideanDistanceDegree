@@ -1,5 +1,29 @@
 --restart
 --Projective formulation for intersections with linear spaces
+
+EDDegreeParameterHomotopyOptions=new Type of MutableHashTable
+-- Directory=> home directory where the files will be stored.
+
+--method used to write the files
+-- WriteMethod => leftKernelUnitEDDegree
+
+--method used to run the computation
+-- RunMethod => runBertiniEDDegree
+
+-- StartWeight => null
+-- TargetWeight => null
+-- StartData => null
+-- TargetData =>null
+-- StartData => null
+-- TargetData => null
+-- StartSubmodel =>{}
+-- TargetSubmodel =>{}
+
+--BertiniConfiguration=>{}
+--BertiniSubstitute=>{}
+--Boundary =>{}
+
+
 rand:=randomValue
 --Assume ring is a complex inexact field
 --G is a subset of F. 

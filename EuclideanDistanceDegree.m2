@@ -49,7 +49,14 @@ export {
     "writeLeftKernelProjectiveGenericEDDegree",
     "writeLeftKernelProjectiveUnitEDDegree",
     "runBertiniProjectiveEDDegree",
-    "startEDDegree","runBertiniStartEDDegree",
+--
+    "newNumericalComputationOptions",
+---
+    "startEDDegree",
+    "runBertiniStartEDDegree",
+    "NumericalComputationOptions",
+--
+    "filterSolutionFile",
 --Options
     "Data","Weight","UseRegeneration","TargetSlice"
         }
@@ -58,15 +65,6 @@ export {
 --###################################
 -- TYPE DEFINITIONS
 --###################################
---RemovalMLDegree=new Type of MutableHashTable
-
-
-
-
-
- 
-
-
 
 ----------------------------------------------------------------------------------------------------------------
 checkZero=(aSol,eps)->if aSol/abs//min<eps then false else true
