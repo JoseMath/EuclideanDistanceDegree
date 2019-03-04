@@ -44,9 +44,10 @@ doc /// --EuclideanDistanceDegree
       Example
         R=QQ[x1,x2,x3,x4]
 	F={det genericMatrix(R,2,2)};
-    	F=G--when F defines a complete intersection we may take F=G
-	numericWeightEDDegree(F,G)
-	numericUnitEDDegree(F,G)
+    	G=F--when F defines a complete intersection we may take F=G
+    	P=(F,G)
+	6==numericWeightEDDegree(storeBM2Files,P)
+	2==numericUnitEDDegree(storeBM2Files,P)	
       Text
       	When an affine cone is not a complete intersection we use membership tests to compute ED Degrees.
 	Here V(F) is an irreducible component of V(G) (a reducible variety) and #G===codim ideal F.
@@ -55,24 +56,73 @@ doc /// --EuclideanDistanceDegree
         R=QQ[x1,x2,x3,x4,x5,x6]
 	F=(minors(2,genericMatrix(R,3,2)))_*;
     	G=drop(F,-1);	
+    	P=(F,G)
     	#G==codim ideal F;
-	10==numericWeightEDDegree(F,G)
+	10==numericWeightEDDegree(storeBM2Files,P)
       Text
-      	One may also determine (Unit) ED degrees using a parameter homotopy. 
+      	One may also determine (Unit) ED degrees using a parameter homotopy called a Weight-ED Degree Homotopy. 
       Example
+      	printingPrecision=100
+	R=QQ[x1,x2,x3,x4]
+	F=(minors(2,genericMatrix(R,2,2)))_*;
+    	G=drop(F,0);	
+	L={}
+	stageOne=1
+    	stageTwo=2
+	P=(F,G,L)
+    	theDir=temporaryFileName()
+	if not fileExists theDir then mkdir theDir
+	NCO=newNumericalComputationOptions(theDir,P)
+	TWV={1,1,1,1}
+	NCO#"TargetWeight"=TWV 
+	ht=(0,0,null)
+	startEDDegree(NCO,ht,stageOne)
+	runBertiniStartEDDegree(NCO,ht,stageOne,#F)
+	readFile(NCO#"Directory","member_points",10000)
+--
+	filterSolutionFile(NCO,"start",#gens ring first F+1+#G+#L)     
+	readFile(NCO#"Directory","start",100000)
+--
+	startEDDegree(NCO,ht,stageTwo)
+	runBertiniStartEDDegree(NCO,ht,stageTwo,#F)
+--(4,3) (3,1) (3,2)
+        weightEDDegreeHomotopy(theDir,P,TWV)
         R=QQ[x1,x2,x3,x4,x5,x6]
 	F=(minors(2,genericMatrix(R,3,2)))_*;
     	G=drop(F,-1);	
-    	#G==codim ideal F;
-	10==numericWeightEDDegree(F,G)
-	2==numericUnitEDDegree(F,G)
-	2==numericUnitEDDegree(F,G)
+	L={}
+	stageOne=1
+    	stageTwo=2
+	P=(F,G,L)
+	NCO=newNumericalComputationOptions(theDir,P)
+	TWV={1,1,1,1,1,1}
+	NCO#"TargetWeight"=TWV
+	startEDDegree(NCO,(0,0,null),stageOne)
+	10==runBertiniStartEDDegree(NCO,#F)
+	readFile(NCO#"Directory","member_points",10000)
+	filterSolutionFile(NCO,"start",#gens ring first F+1+#G+#L)     
+	readFile(NCO#"Directory","start",100000)
+	startEDDegree(NCO,(0,0,null),stageTwo)
+	runBertiniStartEDDegree(NCO,#F)--2
 
+
+
+	
+    	
 ///;
-
-
 end
+restart
+loadPackage("EuclideanDistanceDegree",Reload=>true)
+stageOne=1
+stageTwo=2
+P=(F,G,L)
 
+
+
+
+
+restart
+loadPackage"EuclideanDistanceDegree"
 NCO#"StartWeight"=apply(#gens ring first F,i->1)
 startEDDegree(NCO,(0,0,0),1)
 runBertiniStartEDDegree(storeBM2Files,#F,NCO)

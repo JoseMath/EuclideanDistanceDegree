@@ -60,7 +60,8 @@ export {
 --Options
     "Data","Weight","UseRegeneration","TargetSlice",
     "numericWeightEDDegree",
-    "numericUnitEDDegree"    
+    "numericUnitEDDegree",
+    "weightEDDegreeHomotopy"    
         }
 
 
