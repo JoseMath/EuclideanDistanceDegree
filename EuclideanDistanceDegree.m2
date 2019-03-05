@@ -38,6 +38,7 @@ load"EDD_Numerical.m2"
 
 export { 
 --load"EDD_Determinantal.m2"
+    "homotopyEDDegree",
     "symbolicWeightEDDegree",
     "determinantalUnitEuclideanDistanceDegree",
     "determinantalGenericEuclideanDistanceDegree",

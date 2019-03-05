@@ -4,7 +4,7 @@ rand:=randomValue
 --Assume ring is a complex inexact field
 --G is a subset of F. 
 NumericalComputationOptions=new Type of MutableHashTable
- 
+(stageOne,stageTwo)=(1,2); 
   
     
 parameterKeys={    "StartWeight",    "TargetWeight",
@@ -43,7 +43,8 @@ newNumericalComputationOptions(String,Sequence):=(theDir,P)->(
     NCO#"PrimalCoordinates"=gens ring first F; ---This is different when working with a parameterization
     numX:=#gens ring first G;
     NCO#"TargetData"=NCO#"StartData"=apply(numX,i->random CC); 
-    NCO#"TargetWeight"=NCO#"StartWeight"=apply(numX,i->random CC); 
+    NCO#"TargetWeight"=apply(numX,i->1);
+    NCO#"StartWeight"=apply(numX,i->random CC); 
     NCO#"GammaVector"=apply(numX-1,i->random CC); 
     scan(bertiniKeys,i->NCO#i={});
     NCO#"HomogeneousVariableGroups"={gens ring first F};
@@ -58,74 +59,75 @@ newNumericalComputationOptions(String,Sequence):=(theDir,P)->(
     NCO#"DataVars"="dv";
     NCO#"WeightVars"="wv";
     NCO#"GeneralHyperplaneList"=null;
+    NCO#"PairGeneralHyperplaneList"=null;
     return NCO
     )
 
 defaultFixValues={"StartData","StartWeight","StartSubmodel","JacobianStartSubmodel"}
-
-
-defaultMTName="input_MT_"
-
+-*
+loadPackage("EuclideanDistanceDegree",Reload=>true)
+R=QQ[x,y,z,w]
+F=G={det genericMatrix(R,2,2)}
+L={}
+P=(F,G,L)
+sf=temporaryFileName();mkdir sf
+NCO=newNumericalComputationOptions(sf,P)
+homotopyEDDegree(NCO,"Weight",true,true)
+*-
+homotopyEDDegree=method()
+possibleHT={"Weight","Data","Submodel"}
 stageOne=1
 stageTwo=2
-homotopyEDDegree=method()
-homotopyEDDegree(NumericalComputationOptions,ZZ):=(NCO,stage)->(    
---stage is either 0, 1 or 2.
---Now we extract information from NCO.
-    theDir:=NCO#"Directory"; 
---    data:=NCO#(NCO#"FixedData");
+homotopyEDDegree(NumericalComputationOptions,String,Boolean,Boolean):=(NCO,ht,isStageOne,isStageTwo)->(    
+--(CODE 1) First we set the type of homotopy that will be performed.
+    if not member(ht,possibleHT) then error("Argument 1 is in "|toString possibleHT);
+    if ht===possibleHT_0 then     weightHomotopy:=true else weightHomotopy=false ;    
+    if ht===possibleHT_1 then     dataHomotopy:=true else dataHomotopy=false ;
+    if ht===possibleHT_2 then     submodelHomotopy:=true else submodelHomotopy=false ;
+--(CODE 2) Extract information from NCO (NumericalComputationOptions).
+--The homotopy is highly customizable, which is why we use a new type of MutableHashTable.
     jacL:=NCO#(NCO#"FixedJacobianSubmodel");
-    L:=NCO#(NCO#"FixedSubmodel");
---Other strings that are used
-    (lagMult,numerHB,denomQ,primal,tWeight):=("lagMult","numerHB","denomQ","primal","tWeight")   ; 
-    startWeight:=NCO#"StartWeight";
+    L:=NCO#(NCO#"FixedSubmodel"); 
+    startWeight:=  NCO#"StartWeight";
     targetWeight:=NCO#"TargetWeight";
-    startData:=NCO#"StartData";
-    targetData:=NCO#"StartData";
---    weight:=apply(startWeight,targetWeight,(i,j)->makeB'Section({i,j}))
+    startData:=  NCO#"StartData";
+    targetData:=NCO#"TargetData";
+    (lagMult,numerHB,denomQ,primal,tWeight):=("lagMult","numerHB","denomQ","primal","tWeight")   ; 
     (jv,gv,sv):=(NCO#"JacobianVars",    NCO#"GradientVars",    NCO#"ScaleVars");   
     (dv,wv):=(NCO#"DataVars",    NCO#"WeightVars");   
---First the model and submodel constraints
-------F is the model, V(G)\cap V(L) is a complete intersection contained in V(F)\cap V(L).
+--F is the model, V(G)\cap V(L) is a complete intersection contained in V(F)\cap V(L).
     (F,G,startL,targetL,jacG):=(NCO#"Model",NCO#"WitnessModel",NCO#"StartSubmodel",NCO#"TargetSubmodel",NCO#"JacobianWitnessModel");
     randomGamma:=NCO#"GammaVector";
     xList:=NCO#"PrimalCoordinates";
+--(CODE 3) Now we make rings.
     nc:=#xList;
     kk0:=QQ;
     vRing:=(numVars,s,kk)->kk[apply(numVars,i->s|i)];   
     extrinsicRing:=kk0[flatten transpose apply(#G+#L,i->apply(nc,j->jv|i|"v"|j))];
-    scan({sv,gv,dv,wv},{#G+#L+1,nc,nc,nc},(s,numVars)->extrinsicRing=extrinsicRing**vRing(numVars,s,kk0))
+    scan({sv,gv,dv,wv},{#G+#L+1,nc,nc,nc},(s,numVars)->extrinsicRing=extrinsicRing**vRing(numVars,s,kk0));
 --    **kk0[flatten apply(#G+#L+1,i->sv|i)]**kk0[flatten apply(nc,j->gv|j)]**kk[exVars(nc,dv)];
     symbolicJac:=genericMatrix(extrinsicRing,#G+#L,nc);
     symbolicScaleMatrix:=basis({0,1,0,0,0},extrinsicRing);
     symbolicGradient:=basis({0,0,1,0,0},extrinsicRing);
+-- symbolicSystem is the system we want to solve after subsituting subfunctions.
     symbolicSystem:=symbolicScaleMatrix*(symbolicGradient||symbolicJac);
---    
-    data:=symbolicData:=gens vRing(nc,dv,kk0);
-    dataHomotopy:=false;
-    if dataHomotopy 
-    then pairData:=apply(nc,i->makeB'Section({startData_i,targetData_i},
-    	    B'NumberCoefficients=>{"(1-TData)","TData"},		
-	    NameB'Section=>symbolicData_i )) else
-    if not dataHomotopy then  pairData=apply(nc,i->makeB'Section({startData_i},
+-- (FUNCTION 1) ---
+    pairParameterFunction:=(p0,p1,r1,r2,sym,bool)->(
+	if bool then pp:=apply(#p0,i->makeB'Section({p0_i,p1_i},
+    	    B'NumberCoefficients=>{r1,r2},		
+	    NameB'Section=>sym_i )) else
+    if not bool then  pp=apply(#p0,i->makeB'Section({p0_i},
     	    B'NumberCoefficients=>{1},		
-	    NameB'Section=>symbolicData_i
-	    ));
-    peek first pairData
---
-    weight:=symbolicWeight:=gens vRing(nc,wv,kk0);
---This should be a function and not repeaded twice.
-    weightHomotopy:=true
-    if weightHomotopy 
-    then pairWeight:=apply(nc,i->makeB'Section({startWeight_i,targetWeight_i},
-    	    B'NumberCoefficients=>{"(1-TWeight)","TWeight"},		
-	    NameB'Section=>symbolicWeight_i )) else
-    if not weightHomotopy then  pairWeight=apply(nc,i->makeB'Section({startWeight_i},
-    	    B'NumberCoefficients=>{1},		
-	    NameB'Section=>symbolicWeight_i
-	    ));        
---Gradient Vector
-    print 2;
+	    NameB'Section=>sym_i
+	    )));
+---(CODE 4) Now set up subfunctions. This is done by pairing a symbol with a value by an option or B'Section.
+    weight:=symbolicWeight := gens vRing(nc,wv,kk0);
+    data:=symbolicData := gens vRing(nc,dv,kk0);
+    pairData:=pairParameterFunction(startData,targetData,"(1-TData)","TData",symbolicData,dataHomotopy);	    
+    pairWeight:=pairParameterFunction(startWeight,targetWeight,"(1-TWeight)","TWeight",symbolicWeight,weightHomotopy);
+    print ("pairData",peek first  pairData    );
+    print ("pairWeight",peek first  pairWeight    );
+---(CODE 5) Pair Gradient Vector 
     kk2:=ring first startWeight;
     topS:=kk2[numerHB,denomQ,tWeight];
     (topNumerHB,topDenomQ,topTWeight):=toSequence flatten entries basis({1},topS);
@@ -134,43 +136,46 @@ homotopyEDDegree(NumericalComputationOptions,ZZ):=(NCO,stage)->(
 	    B'NumberCoefficients=>{weight_i},
 	    NameB'Section=>symbolicGradient_(0,i),
 	    B'Homogenization=>"HX"));
---Jacobian matrix
+---(CODE 6) Pair Jacobian: 
+--create ring to homogenize rows (indexed by polynomials) of Jacobian 
     jacLG:=jacL||jacG;
     kk3:=coefficientRing ring first F;
     jacRing:=kk3[gens ring first F|{"HX"}];
-    jac=    matrix apply(numrows jacLG,i->apply(numcols jacLG,j->sub(jacLG_(i,j),jacRing)
+    HX:=last gens jacRing;
+    jac:=    matrix apply(numrows jacLG,i->apply(numcols jacLG,j->sub(jacLG_(i,j),jacRing)
 	    ));
     homogJac:=transpose homogenize(transpose (jac),HX)    ;
     pairJac:=apply(numrows jacLG,i->apply(numcols jacLG,j->symbolicJac_(i,j)=>sub(jacLG_(i,j),jacRing)));
+---(CODE 7) Pair Scaling variables (Lagrange multipliers): 
+--Determine degrees to properly homogenize cols (indexed by variables) of Jacobian
     (degSubmodel,degWitnessModel):=(NCO#"DegreeSubmodel",NCO#"DegreeWitnessModel");
     maxDegree:=(degSubmodel|degWitnessModel|{2})//max;
     degRescale:=({2}|degSubmodel|degWitnessModel)/(i->maxDegree-i);        
---    degRescale={1,2};
     bLagrangeVars:=lagList:=apply(#degRescale,i->"L"|i);
     rescaling:=new MutableList from apply(#degRescale,i->lagList_i);
+--Homogenize cols by multiplying by a diagonal matrix of linear products on the left. 
+----The following determines these linear products. 
     generalHyperplaneList:={};
     scan(#degRescale,i->scan(
 	    degRescale_i,
 	    j->(hg:="*H"|i|"v"|j;
 		rescaling#i=(rescaling#i)|hg;
 	    	generalHyperplaneList=generalHyperplaneList|{hg})
-	    ))
-    rescaling#0;
-    rescaling#1;
---    NCO#"PairGeneralHyperplaneList"=null
+	    ));
     if NCO#"PairGeneralHyperplaneList"=!=null then
          pairGeneralHyperplanes:=NCO#"PairGeneralHyperplaneList"    else(
-         pairGeneralHyperplanes=apply(#generalHyperplaneList,i->makeB'Section(xList|{"HX"},NameB'Section=>generalHyperplaneList_i))
+         pairGeneralHyperplanes=apply(#generalHyperplaneList,i->makeB'Section(xList|{"HX"},NameB'Section=>generalHyperplaneList_i));
 	 NCO#"PairGeneralHyperplaneList"=pairGeneralHyperplanes);
     pairScale:=apply(flatten entries symbolicScaleMatrix,rescaling,(i,j)->i=>j);
---    
+-- (CODE 8)  Set up inputs for bertini. 
     bModelVars:=gens ring first F|{"HX"}   ;
     bPoly:=L|G|flatten entries symbolicSystem;
     bConfiguration:={"UseRegeneration"=>1,
 	"TrackType"=>0,
 	"PrintPathProgress"=>1000}|(NCO#"BertiniStartFiberSolveConfiguration");    
     BF:=pairData|pairWeight|pairJac//flatten|pairGradient|pairScale|pairGeneralHyperplanes;
-    writeSolveInputFile:=(stage,nif)->(
+-- (FUNCTIONS 2) Functions for solving
+    writeSolveInputFunction:=(stage,nif)->(
 	if stage===stageOne then (PG:={"adfadfdf"}; BC:={"TData"=>0,"TWeight"=>0})
 	else if stage===stageTwo
 	then (BC={};
@@ -185,8 +190,8 @@ homotopyEDDegree(NumericalComputationOptions,ZZ):=(NCO,stage)->(
 	    ParameterGroup=>PG,
     	    B'Functions=>BF
 	    ));
-    runSolveInputFile:=(stage,nif)->(
-	writeSolveInputFile(stage,nif); 
+    runSolveInputFunction:=(stage,nif)->(
+	writeSolveInputFunction(stage,nif); 
     	if stage==stageTwo then(
     	    writeParameterFile(NCO#"Directory",{0},NameParameterFile=>"start_parameters");
     	    writeParameterFile(NCO#"Directory",{1},NameParameterFile=>"final_parameters"));
@@ -201,12 +206,13 @@ homotopyEDDegree(NumericalComputationOptions,ZZ):=(NCO,stage)->(
 	    --moveB'File(NCO#"Directory","nonsingular_solutions","start",CopyB'File=>true);
 	    moveB'File(NCO#"Directory","nonsingular_solutions","member_points",CopyB'File=>true));	    
 	    );
-    ttOne=1;
-    ttThree=3;    
-    nameFile:=(stage,case,indexCase,hypersurface,theTrackType)->("input_first_MT_"|case|"_"|indexCase|"_"|theTrackType)
-    writeIsMembershipHypersurface:=(stage,case,indexCase,hypersurface,theTrackType)->(
-	nif=nameFile(stage,case,indexCase,hypersurface,theTrackType);
-    	if stage===stageOne then BC={"TData"=>0,"TWeight"=>0};
+-- (FUNCTIONS 3) Functions for membership test
+    ttOne:=1;
+    ttThree:=3;    
+    nameFileFunction:=(stage,case,indexCase,hypersurface,theTrackType)->("input_first_MT_"|case|"_"|indexCase|"_"|theTrackType);
+    writeIsMembershipFunction:=(stage,case,indexCase,hypersurface,theTrackType)->(
+	nif:=nameFileFunction(stage,case,indexCase,hypersurface,theTrackType);
+    	if stage===stageOne then BC:={"TData"=>0,"TWeight"=>0};
     	if stage===stageTwo then BC={"TData"=>1,"TWeight"=>1};
     	if not member(stage,{1,2}) then error"stage is in {1,2}";
     	makeB'InputFile(NCO#"Directory",
@@ -218,35 +224,34 @@ homotopyEDDegree(NumericalComputationOptions,ZZ):=(NCO,stage)->(
 --	    ParameterGroup=>PG,
     	    B'Functions=>BF
 	    ));
-    runIsMembershipHypersurface:=(stage,case,indexCase,hypersurface,theTrackType)->(
-	nif=nameFile(stage,case,indexCase,hypersurface,theTrackType);
+    runIsMembershipFunction:=(stage,case,indexCase,hypersurface,theTrackType)->(
+	nif:=nameFileFunction(stage,case,indexCase,hypersurface,theTrackType);
 	runBertini(NCO#"Directory",NameB'InputFile=>nif));
-    isMembershipHypersurface:=(stage,case,indexCase,hypersurface)->(
+    isMembershipFunction:=(stage,case,indexCase,hypersurface)->(
 	--Pos dim solve TrackType=>1
-	writeIsMembershipHypersurface(stage,case,indexCase,hypersurface,ttOne);
-	runIsMembershipHypersurface(stage,case,indexCase,hypersurface,ttOne);
-	nif=nameFile(stage,case,indexCase,hypersurface,ttOne);
+	writeIsMembershipFunction(stage,case,indexCase,hypersurface,ttOne);
+	runIsMembershipFunction(stage,case,indexCase,hypersurface,ttOne);
+	nif:=nameFileFunction(stage,case,indexCase,hypersurface,ttOne);
     	moveB'File(NCO#"Directory","bertini_session.log","bertini_session_"|nif|".log",CopyB'File => false);
     	print nif;
 	--MT TrackType=>3
-	writeIsMembershipHypersurface(stage,case,indexCase,hypersurface,ttThree);
-	runIsMembershipHypersurface(stage,case,indexCase,hypersurface,ttThree);
-	nif=nameFile(stage,case,indexCase,hypersurface,ttThree);
+	writeIsMembershipFunction(stage,case,indexCase,hypersurface,ttThree);
+	runIsMembershipFunction(stage,case,indexCase,hypersurface,ttThree);
+	nif=nameFileFunction(stage,case,indexCase,hypersurface,ttThree);
     	moveB'File(NCO#"Directory","bertini_session.log","bertini_session_"|nif|".log",CopyB'File => false);
     	print nif;	
        	outIM:=importIncidenceMatrix(NCO#"Directory");
 	print outIM;
 	return outIM
 	)  ;  
----MT filter
-    removeOffModel:=(stage,case,indexCase,hypersurface)->(
+    positionMembershipFunction:=(stage,case,indexCase,hypersurface)->(
 	isOffHypersurface:=m->(m==={});
-	imMT:=isMembershipHypersurface(stage,case,indexCase,hypersurface);
+	imMT:=isMembershipFunction(stage,case,indexCase,hypersurface);
     	keepPositions:={};
     	scan(#imMT,i->if isOffHypersurface(imMT_i) then keepPositions=keepPositions|{i});
-    	return (keepPositions,#imMT))
---    
-    filterSolutionFile:=(nsf,kp,numCoords)->(     
+    	return (keepPositions,#imMT));
+-- (FUNCTIONS 4) Functions for filtering
+    filterSolutionFunction:=(nsf,kp,numCoords)->(     
     	firstLine := true;
     	countSol  := -1;
     	countLine := 0;
@@ -270,36 +275,69 @@ homotopyEDDegree(NumericalComputationOptions,ZZ):=(NCO,stage)->(
 --      scanLines(scanLineSolutionFunction,addSlash(NCO#"Directory")|"member_points");      
       scanLines(scanLineSolutionFunction,(NCO#"Directory")|"/"|"member_points");      
       close sf;
-      return (nsf))
-    removeOffHypersurface:=(stage,case,indexCase,hypersurface)->(
-	isMembershipHypersurface(stage,case,indexCase,hypersurface);      
+      return (nsf));
+    saturateFunction:=(stage,case,indexCase,hypersurface)->(
+	isMembershipFunction(stage,case,indexCase,hypersurface);      
     	print 1;
-    	(kp,ns):=removeOffModel(stage,case,indexCase,hypersurface);
+    	(kp,ns):=positionMembershipFunction(stage,case,indexCase,hypersurface);
     	print 2;
 	if #kp=!=ns 
 	then (
-	    filterSolutionFile("filterFile",kp,#flatten {bLagrangeVars,bModelVars});
+	    filterSolutionFunction("filterFile",kp,#flatten {bLagrangeVars,bModelVars});
 	    print 1) else(
 	    print 33;
 	    moveB'File(NCO#"Directory","member_points","filterFile",CopyB'File=>true));
     	moveB'File(NCO#"Directory","filterFile","member_points");
 	return #kp
 	);
+-- (FUNCTIONS 5) Functions to iterate filtering
     stageEDDegBound:=new MutableList from {"empty",null,null};   
-    runSaturateUnion:=(saturateUnion,stage)->(
+    runSaturateUnionFunction:=(saturateUnion,stage)->(
     	scan(#saturateUnion,i->(
-		stageEDDegBound#stage=removeOffHypersurface(stageOne,"HX"|i,i,HX)));	
+		stageEDDegBound#stage=saturateFunction(stageOne,"HX"|i,i,HX)));	
     	print(peek stageEDDegBound));	        
-    ---BACK TO COMPUTATIONS--
-    runSolveInputFile(stageOne,"input_first_solve");
-    saturateUnion:={"HX"}|((pairGeneralHyperplanes/(i->i#NameB'Section)));
-    print("saturateUnion",saturateUnion);
-    runSaturateUnion(saturateUnion,stageOne)
-----
-    runSolveInputFile(stageTwo,"input_second_solve");
---    saturateUnion:={"HX"}|((pairGeneralHyperplanes/(i->i#NameB'Section)));
-    print("saturateUnion",saturateUnion);
-    runSaturateUnion(saturateUnion,stageTwo)
+-- (CODE 9) running based off of isStageOne.
+    if isStageOne then(
+    	runSolveInputFunction(stageOne,"input_first_solve");
+    	saturateUnion:={"HX"}|((pairGeneralHyperplanes/(i->i#NameB'Section)));
+    	print("saturateUnion",saturateUnion);
+    	runSaturateUnionFunction(saturateUnion,stageOne));
+-- (CODE 10) running based off of isStageTwo.    
+    if isStageTwo then(
+    	runSolveInputFunction(stageTwo,"input_second_solve");
+    	saturateUnion={"HX"}|((pairGeneralHyperplanes/(i->i#NameB'Section)));
+	print("saturateUnion",saturateUnion);
+    	runSaturateUnionFunction(saturateUnion,stageTwo))
+    )
+
+
+
+numericWeightEDDegree=method()
+numericWeightEDDegree(String,Sequence):=(theDir,P)->(    
+    WV:=apply(#gens ring first first P,i->random CC);
+    NCO:=newNumericalComputationOptions(theDir,P);
+    numericWeightEDDegree(NCO,WV)
+    )
+
+numericWeightEDDegree(String,Sequence,List):=(theDir,P,WV)->(    
+    NCO:=newNumericalComputationOptions(theDir,P);
+    numericWeightEDDegree(NCO,WV)
+    )
+numericWeightEDDegree(NumericalComputationOptions,List):=(NCO,WV)->(
+    NCO#"StartWeight"=WV;
+    homotopyType:=(0,0,0);
+    startEDDegree(NCO,homotopyType,stageOne);
+    return runBertiniStartEDDegree(NCO,homotopyType,stageOne)    
+    )
+
+
+numericUnitEDDegree=method()
+numericUnitEDDegree(String,Sequence):=(theDir,P)->(
+    NCO:=newNumericalComputationOptions(theDir,P);
+    numericUnitEDDegree(NCO))
+numericUnitEDDegree(NumericalComputationOptions):=(NCO)->(
+    WV:=apply(#gens ring first (NCO#"Model"),i->1);
+    numericWeightEDDegree(NCO,WV))
 
 
 
@@ -339,14 +377,7 @@ homotopyEDDegree(NumericalComputationOptions,ZZ):=(NCO,stage)->(
 
 
 
-
-
-
-
-
-
-
-
+-*
 peek first pairWeight
 peek first pairData
     stage=stageTwo;
@@ -408,7 +439,7 @@ peek first pairData
 --Writing functions
     print 8;
     runWrite:=(stage,PG,nif,bfs)->(
-	makeB'InputFile(theDir,NameB'InputFile=>nif,
+	makeB'InputFile(NCO#"Directory",NameB'InputFile=>nif,
 	    HomVariableGroup=>(NCO#"HomogeneousVariableGroups")|{{topL0}|jacLamList},
     	    AffVariableGroup=>NCO#"AffineVariableGroups",
 	    B'Configs=>{
@@ -553,7 +584,7 @@ peek first pairData
     	print(8,"C");
     	UED:=runSort(stageTwo));
     return(GED=>UED));
-
+*-
 -*   
 runBertiniStartEDDegree=method()
 runBertiniStartEDDegree(NumericalComputationOptions):=(NCO)->runBertiniStartEDDegree(NCO,(0,0,0),1,#NCO#"Model")
@@ -597,35 +628,18 @@ runBertiniStartEDDegree(NumericalComputationOptions,Sequence,ZZ,ZZ):=(NCO,ht,sta
 *- 
 
 
-(stageOne,stageTwo)=(1,2);
-numericWeightEDDegree=method()
-numericWeightEDDegree(String,Sequence):=(theDir,P)->(    
-    WV:=apply(#gens ring first first P,i->random CC);
-    NCO:=newNumericalComputationOptions(theDir,P);
-    numericWeightEDDegree(NCO,WV)
-    )
-
-numericWeightEDDegree(String,Sequence,List):=(theDir,P,WV)->(    
-    NCO:=newNumericalComputationOptions(theDir,P);
-    numericWeightEDDegree(NCO,WV)
-    )
-numericWeightEDDegree(NumericalComputationOptions,List):=(NCO,WV)->(
-    NCO#"StartWeight"=WV;
-    homotopyType:=(0,0,0);
-    startEDDegree(NCO,homotopyType,stageOne);
-    return runBertiniStartEDDegree(NCO,homotopyType,stageOne)    
-    )
 
 
-numericUnitEDDegree=method()
-numericUnitEDDegree(String,Sequence):=(theDir,P)->(
-    NCO:=newNumericalComputationOptions(theDir,P);
-    numericUnitEDDegree(NCO))
-numericUnitEDDegree(NumericalComputationOptions):=(NCO)->(
-    WV:=apply(#gens ring first (NCO#"Model"),i->1);
-    numericWeightEDDegree(NCO,WV))
 
 
+
+
+
+
+
+
+
+-*
 weightEDDegreeHomotopy=method()
 weightEDDegreeHomotopy(String,Sequence,List):=(theDir,P,TWV)->(
     print ("A",0);
@@ -648,7 +662,7 @@ weightEDDegreeHomotopy(String,Sequence,List):=(theDir,P,TWV)->(
     print ("A",4);
     return  (GED=>UED)
     )
-    
+*-    
 end
 
  
