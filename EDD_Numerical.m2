@@ -65,6 +65,8 @@ newNumericalComputationOptions(String,Sequence):=(theDir,P)->(
 
 defaultFixValues={"StartData","StartWeight","StartSubmodel","JacobianStartSubmodel"}
 -*
+restart
+printingPrecision=100
 loadPackage("EuclideanDistanceDegree",Reload=>true)
 R=QQ[x,y,z,w]
 F=G={det genericMatrix(R,2,2)}
@@ -74,6 +76,21 @@ sf=temporaryFileName();mkdir sf
 NCO=newNumericalComputationOptions(sf,P)
 homotopyEDDegree(NCO,"Weight",true,true)
 *-
+
+-*
+restart
+printingPrecision=100
+loadPackage("EuclideanDistanceDegree",Reload=>true)
+R=QQ[x,y,z,w]
+F=G={det genericMatrix(R,2,2),random({1},R)}
+L={}
+P=(F,G,L)
+sf=temporaryFileName();mkdir sf
+NCO=newNumericalComputationOptions(sf,P)
+homotopyEDDegree(NCO,"Weight",true,true)
+*-
+
+
 homotopyEDDegree=method()
 possibleHT={"Weight","Data","Submodel"}
 stageOne=1
@@ -158,13 +175,15 @@ homotopyEDDegree(NumericalComputationOptions,String,Boolean,Boolean):=(NCO,ht,is
     generalHyperplaneList:={};
     scan(#degRescale,i->scan(
 	    degRescale_i,
-	    j->(hg:="*H"|i|"v"|j;
+	    j->(hg:="H"|i|"v"|j;
 		rescaling#i=(rescaling#i)|hg;
 	    	generalHyperplaneList=generalHyperplaneList|{hg})
 	    ));
-    if NCO#"PairGeneralHyperplaneList"=!=null then
-         pairGeneralHyperplanes:=NCO#"PairGeneralHyperplaneList"    else(
-         pairGeneralHyperplanes=apply(#generalHyperplaneList,i->makeB'Section(xList|{"HX"},NameB'Section=>generalHyperplaneList_i));
+    if NCO#"PairGeneralHyperplaneList"=!=null 
+    then pairGeneralHyperplanes:=NCO#"PairGeneralHyperplaneList"    
+    else(
+	pairGeneralHyperplanes=apply(#generalHyperplaneList,
+	    i->makeB'Section(xList|{"HX"},NameB'Section=>generalHyperplaneList_i));
 	 NCO#"PairGeneralHyperplaneList"=pairGeneralHyperplanes);
     pairScale:=apply(flatten entries symbolicScaleMatrix,rescaling,(i,j)->i=>j);
 -- (CODE 8)  Set up inputs for bertini. 
@@ -173,7 +192,7 @@ homotopyEDDegree(NumericalComputationOptions,String,Boolean,Boolean):=(NCO,ht,is
     bConfiguration:={"UseRegeneration"=>1,
 	"TrackType"=>0,
 	"PrintPathProgress"=>1000}|(NCO#"BertiniStartFiberSolveConfiguration");    
-    BF:=pairData|pairWeight|pairJac//flatten|pairGradient|pairScale|pairGeneralHyperplanes;
+    BF:=pairData|pairWeight|pairJac//flatten|pairGradient|pairGeneralHyperplanes|pairScale;
 -- (FUNCTIONS 2) Functions for solving
     writeSolveInputFunction:=(stage,nif)->(
 	if stage===stageOne then (PG:={"adfadfdf"}; BC:={"TData"=>0,"TWeight"=>0})
@@ -249,9 +268,23 @@ homotopyEDDegree(NumericalComputationOptions,String,Boolean,Boolean):=(NCO,ht,is
 	imMT:=isMembershipFunction(stage,case,indexCase,hypersurface);
     	keepPositions:={};
     	scan(#imMT,i->if isOffHypersurface(imMT_i) then keepPositions=keepPositions|{i});
+    	print("kpimMT",keepPositions=>#imMT);
+    	return (keepPositions,#imMT));
+---
+    binaryPositionFunction:=(stage,case,indexCase,hypersurface,bin)->(
+    	if bin==="typeA" 
+	then isOffHypersurface:=(m->(m==={}))
+    	else if bin==="typeB" 
+	then isOffHypersurface=(m->(m=!={}))
+	else error"last argument is typeA or typeB";
+	imMT:=isMembershipFunction(stage,case,indexCase,hypersurface);
+    	keepPositions:={};
+    	scan(#imMT,i->if isOffHypersurface(imMT_i) then keepPositions=keepPositions|{i});
+    	print("kpimMT",keepPositions=>#imMT);
     	return (keepPositions,#imMT));
 -- (FUNCTIONS 4) Functions for filtering
     filterSolutionFunction:=(nsf,kp,numCoords)->(     
+    	print("kpnumCords",kp=>numCoords);    
     	firstLine := true;
     	countSol  := -1;
     	countLine := 0;
@@ -276,11 +309,12 @@ homotopyEDDegree(NumericalComputationOptions,String,Boolean,Boolean):=(NCO,ht,is
       scanLines(scanLineSolutionFunction,(NCO#"Directory")|"/"|"member_points");      
       close sf;
       return (nsf));
-    saturateFunction:=(stage,case,indexCase,hypersurface)->(
+    saturateFunction:=(stage,case,indexCase,hypersurface,bin)->(--(stage,case,indexCase,hypersurface)
 	isMembershipFunction(stage,case,indexCase,hypersurface);      
     	print 1;
-    	(kp,ns):=positionMembershipFunction(stage,case,indexCase,hypersurface);
-    	print 2;
+--    	(kp,ns):=positionMembershipFunction(stage,case,indexCase,hypersurface);
+    	(kp,ns):=binaryPositionFunction(stage,case,indexCase,hypersurface,bin);
+    	print("saturateFunction",kp,ns);
 	if #kp=!=ns 
 	then (
 	    filterSolutionFunction("filterFile",kp,#flatten {bLagrangeVars,bModelVars});
@@ -290,24 +324,41 @@ homotopyEDDegree(NumericalComputationOptions,String,Boolean,Boolean):=(NCO,ht,is
     	moveB'File(NCO#"Directory","filterFile","member_points");
 	return #kp
 	);
--- (FUNCTIONS 5) Functions to iterate filtering
     stageEDDegBound:=new MutableList from {"empty",null,null};   
+-- (FUNCTIONS 5) Functions to iterate filtering
     runSaturateUnionFunction:=(saturateUnion,stage)->(
     	scan(#saturateUnion,i->(
-		stageEDDegBound#stage=saturateFunction(stageOne,"HX"|i,i,HX)));	
+		stageEDDegBound#stage=saturateFunction(stageOne,"HX",i,HX,"typeA")));	 
+    	print(peek stageEDDegBound));	        
+-- (FUNCTIONS 6) Functions to restrict to the variety 
+    runRestrictIntersectionFunction:=(saturateUnion,stage)->(
+    	scan(#saturateUnion,i->(
+		stageEDDegBound#stage=saturateFunction(stageOne,"HX",i,HX,"typeB")));	 
     	print(peek stageEDDegBound));	        
 -- (CODE 9) running based off of isStageOne.
     if isStageOne then(
     	runSolveInputFunction(stageOne,"input_first_solve");
     	saturateUnion:={"HX"}|((pairGeneralHyperplanes/(i->i#NameB'Section)));
     	print("saturateUnion",saturateUnion);
-    	runSaturateUnionFunction(saturateUnion,stageOne));
+    	runSaturateUnionFunction(saturateUnion,stageOne)
+--	print("134",1);
+--    	moveB'File(NCO#"Directory","member_points","filterFile",CopyB'File=>true);
+--	runRestrictIntersectionFunction(F,stageOne)
+	);
+    print("GOTO STAGE TWO");
 -- (CODE 10) running based off of isStageTwo.    
     if isStageTwo then(
     	runSolveInputFunction(stageTwo,"input_second_solve");
+    	print(readFile(NCO#"Directory","member_points",10000));
     	saturateUnion={"HX"}|((pairGeneralHyperplanes/(i->i#NameB'Section)));
 	print("saturateUnion",saturateUnion);
-    	runSaturateUnionFunction(saturateUnion,stageTwo))
+    	print(readFile(NCO#"Directory","member_points",10000));
+    	runSaturateUnionFunction(saturateUnion,stageTwo);
+	print("WIN")
+--    	moveB'File(NCO#"Directory","member_points","filterFile",CopyB'File=>true);
+--    	print(readFile(NCO#"Directory","member_points",10000));
+--	runRestrictIntersectionFunction(F,stageTwo)
+	)
     )
 
 
