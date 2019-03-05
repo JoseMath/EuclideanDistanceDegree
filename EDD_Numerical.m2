@@ -4,7 +4,7 @@ rand:=randomValue
 --Assume ring is a complex inexact field
 --G is a subset of F. 
 NumericalComputationOptions=new Type of MutableHashTable
-
+ 
   
     
 parameterKeys={    "StartWeight",    "TargetWeight",
@@ -68,8 +68,8 @@ defaultMTName="input_MT_"
 
 stageOne=1
 stageTwo=2
-stageWeightEDDegreeHomotopy=method()
-stageWeightEDDegreeHomotopy(NumericalComputationOptions,ZZ):=(NCO,stage)->(    
+homotopyEDDegree=method()
+homotopyEDDegree(NumericalComputationOptions,ZZ):=(NCO,stage)->(    
 --stage is either 0, 1 or 2.
 --Now we extract information from NCO.
     theDir:=NCO#"Directory"; 
@@ -102,7 +102,7 @@ stageWeightEDDegreeHomotopy(NumericalComputationOptions,ZZ):=(NCO,stage)->(
     symbolicSystem:=symbolicScaleMatrix*(symbolicGradient||symbolicJac);
 --    
     data:=symbolicData:=gens vRing(nc,dv,kk0);
-    dataHomotopy:=false
+    dataHomotopy:=false;
     if dataHomotopy 
     then pairData:=apply(nc,i->makeB'Section({startData_i,targetData_i},
     	    B'NumberCoefficients=>{"(1-TData)","TData"},		
@@ -159,8 +159,9 @@ stageWeightEDDegreeHomotopy(NumericalComputationOptions,ZZ):=(NCO,stage)->(
     rescaling#1;
 --    NCO#"PairGeneralHyperplaneList"=null
     if NCO#"PairGeneralHyperplaneList"=!=null then
-         pairGeneralHyperplanes:=NCO#"PairGeneralHyperplaneList"    else
-         pairGeneralHyperplanes=apply(#generalHyperplaneList,i->makeB'Section(xList|{"HX"},NameB'Section=>generalHyperplaneList_i));
+         pairGeneralHyperplanes:=NCO#"PairGeneralHyperplaneList"    else(
+         pairGeneralHyperplanes=apply(#generalHyperplaneList,i->makeB'Section(xList|{"HX"},NameB'Section=>generalHyperplaneList_i))
+	 NCO#"PairGeneralHyperplaneList"=pairGeneralHyperplanes);
     pairScale:=apply(flatten entries symbolicScaleMatrix,rescaling,(i,j)->i=>j);
 --    
     bModelVars:=gens ring first F|{"HX"}   ;
@@ -188,7 +189,7 @@ stageWeightEDDegreeHomotopy(NumericalComputationOptions,ZZ):=(NCO,stage)->(
 	writeSolveInputFile(stage,nif); 
     	if stage==stageTwo then(
     	    writeParameterFile(NCO#"Directory",{0},NameParameterFile=>"start_parameters");
-    	    writeParameterFile(NCO#"Directory",{1},NameParameterFile=>"target_parameters"));
+    	    writeParameterFile(NCO#"Directory",{1},NameParameterFile=>"final_parameters"));
 	runBertini(NCO#"Directory",NameB'InputFile=>nif);
     	readFile(NCO#"Directory");
     	if stage==stageOne then(	
@@ -199,7 +200,7 @@ stageWeightEDDegreeHomotopy(NumericalComputationOptions,ZZ):=(NCO,stage)->(
 	    moveB'File(NCO#"Directory","nonsingular_solutions","stageTwo_solutions",CopyB'File=>true);
 	    --moveB'File(NCO#"Directory","nonsingular_solutions","start",CopyB'File=>true);
 	    moveB'File(NCO#"Directory","nonsingular_solutions","member_points",CopyB'File=>true));	    
-	    )
+	    );
     ttOne=1;
     ttThree=3;    
     nameFile:=(stage,case,indexCase,hypersurface,theTrackType)->("input_first_MT_"|case|"_"|indexCase|"_"|theTrackType)
@@ -237,10 +238,115 @@ stageWeightEDDegreeHomotopy(NumericalComputationOptions,ZZ):=(NCO,stage)->(
 	print outIM;
 	return outIM
 	)  ;  
+---MT filter
+    removeOffModel:=(stage,case,indexCase,hypersurface)->(
+	isOffHypersurface:=m->(m==={});
+	imMT:=isMembershipHypersurface(stage,case,indexCase,hypersurface);
+    	keepPositions:={};
+    	scan(#imMT,i->if isOffHypersurface(imMT_i) then keepPositions=keepPositions|{i});
+    	return (keepPositions,#imMT))
+--    
+    filterSolutionFile:=(nsf,kp,numCoords)->(     
+    	firstLine := true;
+    	countSol  := -1;
+    	countLine := 0;
+    	groupSize := 1+numCoords;
+    	isSelected:= null;
+    	sf:=openOutAppend(NCO#"Directory"|"/"|nsf);
+    	scanLineSolutionFunction := (ell)->(
+      	    if firstLine 
+      	    then (firstLine=false; sf<< toString(#kp)<<endl)
+      	    else if countSol < #kp 
+      	    then (
+    	  	if countLine==0 then isSelected=member(countSol,kp);
+	  	countLine=countLine+1;
+    	  	if isSelected then sf <<ell<<endl;
+      	  	if countLine==groupSize 
+      	  	then (
+	      	    --print (countLine,groupSize,"grp");
+	      	    countLine=0; 
+	      	    countSol=countSol+1;
+	      	    )));
+--      scanLines(scanLineSolutionFunction,addSlash(NCO#"Directory")|"member_points");      
+      scanLines(scanLineSolutionFunction,(NCO#"Directory")|"/"|"member_points");      
+      close sf;
+      return (nsf))
+    removeOffHypersurface:=(stage,case,indexCase,hypersurface)->(
+	isMembershipHypersurface(stage,case,indexCase,hypersurface);      
+    	print 1;
+    	(kp,ns):=removeOffModel(stage,case,indexCase,hypersurface);
+    	print 2;
+	if #kp=!=ns 
+	then (
+	    filterSolutionFile("filterFile",kp,#flatten {bLagrangeVars,bModelVars});
+	    print 1) else(
+	    print 33;
+	    moveB'File(NCO#"Directory","member_points","filterFile",CopyB'File=>true));
+    	moveB'File(NCO#"Directory","filterFile","member_points");
+	return #kp
+	);
+    stageEDDegBound:=new MutableList from {"empty",null,null};   
+    runSaturateUnion:=(saturateUnion,stage)->(
+    	scan(#saturateUnion,i->(
+		stageEDDegBound#stage=removeOffHypersurface(stageOne,"HX"|i,i,HX)));	
+    	print(peek stageEDDegBound));	        
+    ---BACK TO COMPUTATIONS--
     runSolveInputFile(stageOne,"input_first_solve");
-    isMembershipHypersurface(stageOne,"HX",0,HX)      
-    
----BACK TO COMPUTATIONS
+    saturateUnion:={"HX"}|((pairGeneralHyperplanes/(i->i#NameB'Section)));
+    print("saturateUnion",saturateUnion);
+    runSaturateUnion(saturateUnion,stageOne)
+----
+    runSolveInputFile(stageTwo,"input_second_solve");
+--    saturateUnion:={"HX"}|((pairGeneralHyperplanes/(i->i#NameB'Section)));
+    print("saturateUnion",saturateUnion);
+    runSaturateUnion(saturateUnion,stageTwo)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 peek first pairWeight
 peek first pairData
     stage=stageTwo;
@@ -255,7 +361,7 @@ peek first pairData
     if stage==stageTwo then(
     	writeSolveInputFile(stageTwo) 	;
     	writeParameterFile(NCO#"Directory",{0},NameParameterFile=>"start_parameters");
-    	writeParameterFile(NCO#"Directory",{1},NameParameterFile=>"target_parameters");
+    	writeParameterFile(NCO#"Directory",{1},NameParameterFile=>"final_parameters");
     	runBertini(NCO#"Directory",NameB'InputFile=>"input_second_solve");
 	moveB'File(NCO#"Directory","nonsingular_solutions","stageTwo_solutions",CopyB'File=>true);
 	moveB'File(NCO#"Directory","nonsingular_solutions","start",CopyB'File=>true);
@@ -489,38 +595,6 @@ runBertiniStartEDDegree(NumericalComputationOptions,Sequence,ZZ,ZZ):=(NCO,ht,sta
     return(EDDeg)
      )
 *- 
-filterSolutionFile=method()
-filterSolutionFile(NumericalComputationOptions,String,ZZ):=(NCO,newFileName,numCoords)->(     
-    theDir:=NCO#"Directory";
-    if fileExists(addSlash(theDir)|newFileName)
-    then removeFile(addSlash(theDir)|newFileName);    
-    selectPoints:=NCO#"TrackSolutions";
-    numSols   := #selectPoints;
-    firstLine := true;
-    countSol  := -1;
-    countLine := 0;
-    groupSize := 1+numCoords;
-    isSelected:= null;
-------
-    sf:=openOutAppend(addSlash(theDir)|newFileName);
-    scanLineSolutionFunction := (ell)->(
---      print (countLine,countSol,"every");
-      if firstLine 
-      then (firstLine=false; sf<< toString(sum selectPoints)<<endl)
-      else if countSol < numSols 
-      then (
-    	  if countLine==0 then isSelected=selectPoints_countSol;
-	  countLine=countLine+1;
-    	  if isSelected==1 then sf <<ell<<endl;
-      	  if countLine==groupSize 
-      	  then (
-	      --print (countLine,groupSize,"grp");
-	      countLine=0; 
-	      countSol=countSol+1;
-	      )));
-      scanLines(scanLineSolutionFunction,addSlash(theDir)|"member_points");      
-      close sf;
-      return (theDir,newFileName))
 
 
 (stageOne,stageTwo)=(1,2);
