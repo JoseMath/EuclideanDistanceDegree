@@ -52,6 +52,7 @@ export {
 --
     "newNumericalComputationOptions",
 ---
+    "stageWeightEDDegreeHomotopy",
     "startEDDegree",
     "runBertiniStartEDDegree",
     "NumericalComputationOptions",

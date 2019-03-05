@@ -75,7 +75,27 @@ doc /// --EuclideanDistanceDegree
 	NCO=newNumericalComputationOptions(theDir,P)
 	TWV={1,1,1,1}
 	NCO#"TargetWeight"=TWV 
-	ht=(0,0,null)
+	stageWeightEDDegreeHomotopy(NCO,1)
+	stageWeightEDDegreeHomotopy(NCO,2)
+
+
+
+	R=QQ[x1,x2,x3,x4]
+	F={3*x1-13*x2,x1+x2+x3+x4};
+    	G=drop(F,0);	
+
+	stageOne=1
+    	stageTwo=2
+	P=(F,G,L)
+    	theDir=temporaryFileName()
+	if not fileExists theDir then mkdir theDir
+	NCO=newNumericalComputationOptions(theDir,P)
+	TWV={1,1,1,1}
+	NCO#"TargetWeight"=TWV 
+	stageWeightEDDegreeHomotopy(NCO,1)
+
+
+
 	startEDDegree(NCO,ht,stageOne)
 	runBertiniStartEDDegree(NCO,ht,stageOne,#F)
 	readFile(NCO#"Directory","member_points",10000)
@@ -110,12 +130,22 @@ doc /// --EuclideanDistanceDegree
 	
     	
 ///;
+
 end
 restart
 loadPackage("EuclideanDistanceDegree",Reload=>true)
-stageOne=1
-stageTwo=2
-P=(F,G,L)
+    	printingPrecision=300
+        R=QQ[x1,x2,x3,x4,x5,x6]
+	F=(minors(2,genericMatrix(R,3,2)))_*;
+    	G=drop(F,-1);	
+	L={}
+	stageOne=1
+    	stageTwo=2
+	P=(F,G,L)
+    	theDir4=temporaryFileName()
+	if not fileExists theDir4 then mkdir theDir4
+	NCO=newNumericalComputationOptions(theDir4,P)
+	stageWeightEDDegreeHomotopy(NCO,1)
 
 
 
