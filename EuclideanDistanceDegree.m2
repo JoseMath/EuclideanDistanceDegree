@@ -22,7 +22,6 @@ newPackage(
 --path=prepend("/Users/jo/Documents/GoodGit/EuclideanDistanceDegree",path)
 --loadPackage("EuclideanDistanceDegree",Reload=>true)
 
-
 randomCC=()->random CC
 randCC=()->random CC
 randomRR=()->((-1)^(random(1,2)) *random RR)
