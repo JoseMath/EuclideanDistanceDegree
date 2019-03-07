@@ -12,6 +12,7 @@ NumericalComputationOptions=new Type of MutableHashTable
 restart
 printingPrecision=100
 loadPackage("EuclideanDistanceDegree",Reload=>true)
+check EuclideanDistanceDegree
 R=QQ[x1,x2,x3,x4]
 M=matrix{{x1,x2,x3},{x2,x3,x4}}
 F=(minors(2,M))_*
@@ -487,6 +488,7 @@ homotopyEDDegree(NumericalComputationOptions,String,Boolean,Boolean):=(NCO,ht,is
     onPolyList :=F/(i->homogenize(sub(i,jacRing),HX));
     if isStageOne then runComputationStage(stageOne,offPolyList,onPolyList);
     if isStageTwo then runComputationStage(stageTwo,offPolyList,onPolyList);
+    if isStageTwo then return stageEDDegBound#2 else if isStageOne then return stageEDDegBound#1
       )
 
 
@@ -494,31 +496,33 @@ homotopyEDDegree(NumericalComputationOptions,String,Boolean,Boolean):=(NCO,ht,is
 
 
 numericWeightEDDegree=method()
-numericWeightEDDegree(String,Sequence):=(theDir,P)->(    
-    WV:=apply(#gens ring first first P,i->random CC);
-    NCO:=newNumericalComputationOptions(theDir,P);
-    numericWeightEDDegree(NCO,WV)
+
+numericWeightEDDegree(String,Sequence,List):=(dir,P,wv)->(    
+    NCO:=newNumericalComputationOptions(dir,P);
+--    WV:=apply(#gens ring first first P,i->random CC);
+    NCO#"StartWeight"=wv;
+    ht:="Weight";
+    isStageOne:=true;
+    isStageTwo:=false;
+    homotopyEDDegree(NCO,ht,isStageOne,isStageTwo)
     )
 
-numericWeightEDDegree(String,Sequence,List):=(theDir,P,WV)->(    
-    NCO:=newNumericalComputationOptions(theDir,P);
-    numericWeightEDDegree(NCO,WV)
-    )
-numericWeightEDDegree(NumericalComputationOptions,List):=(NCO,WV)->(
-    NCO#"StartWeight"=WV;
-    homotopyType:=(0,0,0);
-    startEDDegree(NCO,homotopyType,stageOne);
-    return runBertiniStartEDDegree(NCO,homotopyType,stageOne)    
-    )
+numericWeightEDDegree(Sequence,List):=(P,wv)->(
+    dir:=temporaryFileName();    
+    if not fileExists dir then mkdir dir;
+    numericWeightEDDegree(dir,P,wv)    )
+--numericWeightEDDegree(P,{1,2,3,4})
 
+edTypes={"Generic","Unit"}
+numericEDDegree=method()
+numericEDDegree(Sequence,String):=(P,typeED)->(    
+    if typeED ==="Generic" then  wv:=apply(#gens ring first first P,i->random CC)
+    else if typeED==="Unit" then wv=apply(#gens ring first first P,i->1)
+    else error("last argument needs to be in "|toString edTypes);    
+    numericWeightEDDegree(P,wv));    
+--numericEDDegree(P,"Generic")
+--numericEDDegree(P,"Unit")
 
-numericUnitEDDegree=method()
-numericUnitEDDegree(String,Sequence):=(theDir,P)->(
-    NCO:=newNumericalComputationOptions(theDir,P);
-    numericUnitEDDegree(NCO))
-numericUnitEDDegree(NumericalComputationOptions):=(NCO)->(
-    WV:=apply(#gens ring first (NCO#"Model"),i->1);
-    numericWeightEDDegree(NCO,WV))
 
 
 
