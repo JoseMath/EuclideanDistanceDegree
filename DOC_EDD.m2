@@ -44,12 +44,11 @@ doc /// --EuclideanDistanceDegree
       Example
         R=QQ[x1,x2,x3,x4]
 	F={det genericMatrix(R,2,2)};
-    	G=F--when F defines a complete intersection we may take F=G
-    	P=(F,G)
+    	P=(F,F)
 	6==numericEDDegree(P,"Generic")
 	2==numericEDDegree(P,"Unit")
       Text
-      	When an affine cone is not a complete intersection we use membership tests to compute ED Degrees.
+      	When a V(F) is not a complete intersection we use membership tests to compute ED Degrees.
 	Here V(F) is an irreducible component of V(G) (a reducible variety) and #G===codim ideal F.
 	These methods employ an equation by equation method called regeneration. 
       Example
@@ -63,20 +62,79 @@ doc /// --EuclideanDistanceDegree
       Text
       	One may also determine (Unit) ED degrees using a parameter homotopy called a Weight-ED Degree Homotopy. 
       Example
-      	printingPrecision=100
-	R=QQ[x1,x2,x3,x4]
-	F=(minors(2,genericMatrix(R,2,2)))_*;
-    	G=drop(F,0);	
-	L={}
-	P=(F,G,L)
-    	theDir=temporaryFileName()
-	if not fileExists theDir then mkdir theDir
-	NCO=newNumericalComputationOptions(theDir,P)
---	NCO#"TargetWeight"=TWV 
+    	dir=temporaryFileName();if not fileExists dir then mkdir dir;
+        R=QQ[x1,x2,x3,x4,x5,x6]
+	F=(minors(2,genericMatrix(R,3,2)))_*;
+    	G=drop(F,-1);	
+    	#G==codim ideal F;
+    	P=(F,G)
+	NCO=newNumericalComputationOptions(dir,P)
+    	NCO#"TargetWeight"=apply(#gens R,i->1)
 	homotopyEDDegree(NCO,"Weight",true,true)
+    	NCO#"TargetWeight"=(apply(-1+#gens R,i->1))|{0}
+	homotopyEDDegree(NCO,"Weight",false,true)
+      Example
+    	dir=temporaryFileName();if not fileExists dir then mkdir dir;
+        R=QQ[x1,x2,x3,x4,x5,x6]
+	F=(minors(2,genericMatrix(R,3,2)))_*;
+    	G=drop(F,-1);	
+    	#G==codim ideal F;
+    	P=(F,G)
+	NCO=newNumericalComputationOptions(dir,P)
+    	NCO#"TargetData"=apply(#gens R,i->1)
+	homotopyEDDegree(NCO,"Data",true,true)
+    	NCO#"TargetWeight"=(apply(-1+#gens R,i->1))|{0}
+	homotopyEDDegree(NCO,"Data",false,true)
 ///;
 
+
 end
+
+restart
+installPackage"EuclideanDistanceDegree"
+R1=QQ[x1,x2,x3,x4]
+R2=QQ[y1,y2,y3,y4]
+
+f=det genericMatrix(R1,2,2)
+F={f}
+F={x1^3+x2*x3^2+x4^3}
+F={x1^3-x2*x3^2}
+F={x1^4-x2*x3^3-x2*x3^3}
+
+dualVariety=(F,R1,R2,c)->(
+    R:=R1**R2;
+    M:=sub(matrix {gens R2},R)||sub(matrix makeJac(F,gens R1),R);
+    win:=sub(ideal(F),R)+minors(c+1,M);        
+    sub(eliminate(flatten entries basis({1,0},R),first decompose win),R2)
+    )
+determinantalGenericEuclideanDistanceDegree F
+determinantalUnitEuclideanDistanceDegree F
+dF=flatten entries gens dualVariety(F,R1,R2,1)
+determinantalGenericEuclideanDistanceDegree dF
+determinantalUnitEuclideanDistanceDegree dF
+
+
+
+
+conormal=conormal+ideal  f
+conormal=first decompose conormal
+multidegree conormal
+
+R=QQ[x1,x2,x3,x4]**QQ[y1,y2,y3,y4]
+f=det genericMatrix(R,2,2)
+f2=random({1,0},R)
+conormal2=minors(3,matrix {{y1,y2,y3,y4}}||matrix makeJac({f,f2},{x1,x2,x3,x4}))
+conormal2=conormal2+ideal  (f,f2)
+conormal2=first decompose conormal2
+multidegree conormal2
+
+
+
+
+last decompose (conormal+ideal(x1-y1,x2-y2,x3-y3,x4-y4))
+first oo
+mingens oo
+
 restart
 loadPackage("EuclideanDistanceDegree",Reload=>true)
     	printingPrecision=300

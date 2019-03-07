@@ -9,10 +9,14 @@ NumericalComputationOptions=new Type of MutableHashTable
     
     
 -*
+installPackage"EuclideanDistanceDegree"
+check EuclideanDistanceDegree
+
 restart
 printingPrecision=100
 loadPackage("EuclideanDistanceDegree",Reload=>true)
 check EuclideanDistanceDegree
+help EuclideanDistanceDegree
 R=QQ[x1,x2,x3,x4]
 M=matrix{{x1,x2,x3},{x2,x3,x4}}
 F=(minors(2,M))_*
@@ -300,7 +304,7 @@ homotopyEDDegree(NumericalComputationOptions,String,Boolean,Boolean):=(NCO,ht,is
     HX:=last gens jacRing;
     homogLG:= homogenize(sub(matrix{L|G},jacRing),HX)//entries//flatten;
     homogJac:=    matrix apply(numrows jacLG,i->apply(numcols jacLG,j->diff((gens jacRing)_j,homogLG_i)));
-    print homogJac;
+    print("homogenized jacobian",homogJac);
     pairRowFunction(symbolicJac,homogJac,"HX");
 ---(CODE 7) Pair Scaling variables (Lagrange multipliers): 
 --Determine degrees to properly homogenize cols (indexed by variables) of Jacobian
@@ -406,12 +410,12 @@ homotopyEDDegree(NumericalComputationOptions,String,Boolean,Boolean):=(NCO,ht,is
 	runBertini(NCO#"Directory",NameB'InputFile=>nif);
     	moveB'File(NCO#"Directory","bertini_session.log","bertini_session_"|nif|".log",CopyB'File => false);
        	outIM:=importIncidenceMatrix(NCO#"Directory");
-    	print nif;	
+    	print("Membership tests",nif);	
 	print outIM;
 	return outIM	)  ;  
 -- (FUNCTIONS 4) Functions for filtering based off of incidence matrix
     filterSolutionFunction:=(nsf,kp,ns,numCoords)->(     
-    	print("RUN FILTER",kp=>numCoords);    
+--    	print("RUN FILTER",kp=>numCoords);    
     	firstLine := true;
     	countSol  := 0;
     	countLine := 0;
@@ -439,7 +443,7 @@ homotopyEDDegree(NumericalComputationOptions,String,Boolean,Boolean):=(NCO,ht,is
   --filterSolutionFunction("T1",{1,2,3,4,5,6,7},8)
 --      saturateFunction=positionFunction=positionFilterFunction;
     positionFilterFunction:=(stage,case,indexCase,hypersurface,bin)->(--(stage,case,indexCase,hypersurface)
-	isMembershipFunction(stage,case,indexCase,hypersurface);      
+--	isMembershipFunction(stage,case,indexCase,hypersurface);      
 --    	(kp,ns):=positionMembershipFunction(stage,case,indexCase,hypersurface);
     	if bin==="typeA" 
 	then isOffHypersurface:=(m->(m==={}))
@@ -450,8 +454,8 @@ homotopyEDDegree(NumericalComputationOptions,String,Boolean,Boolean):=(NCO,ht,is
     	kp:={};
     	scan(#imMT,i->if isOffHypersurface(imMT_i) then kp=kp|{i});
     	ns:= #imMT;
-    	print("kp",kp,"num kp",#kp,"num sols",ns);
 	(nsf,nc):=("filterFile",#flatten {bLagrangeVars,bModelVars});
+    	print("Filter",kp,"num kp",#kp,"num sols",ns,"num coordinates",nc,bin);
 	filterSolutionFunction("filterFile",kp,ns,nc);
     	moveB'File(NCO#"Directory","filterFile","member_points",CopyB'File=>true);
 	return #kp
@@ -480,7 +484,7 @@ homotopyEDDegree(NumericalComputationOptions,String,Boolean,Boolean):=(NCO,ht,is
 	runSaturateUnionFunction(offPolyList,stage);
     	print("WIN","SATURATE");
 --    	moveB'File(NCO#"Directory","member_points","filterFile",CopyB'File=>true);
-	print("onPolyList",onPolyList);
+--	print("onPolyList",onPolyList);
 	runRestrictIntersectionFunction(onPolyList,stage);
 	print("WIN","RESTRICT");
 	print("WIN",stage)	);    
@@ -874,10 +878,13 @@ R=QQ[x11,x12,x13,
     x21,x22,x23,
     x31,x32,x33];
 F=flatten entries gens minors(3,genericMatrix(R,3,3))
-G=F
-L={}
+P=(F,F,L)
+NCO=newNumericalComputationOptions(storeBM2Files,P)
 
-startEDDegree(storeBM2Files,F,G,{},Weight=>"Unit")
+methods homotopyEDDegree
+homotopyEDDegree(NCO,"Weight",true,true)
+
+(storeBM2Files,F,G,{},Weight=>"Unit")
 runBertiniStartEDDegree(storeBM2Files,#F)--3
 
 startEDDegree(storeBM2Files,F,G,L,Weight=>"Generic")
@@ -930,222 +937,3 @@ runBertiniEDDegree(storeBM2Files)
 symbolicWeightEDDegree
 startEDDegree(storeBM2Files,F,G,L,Weight=>"Generic")
 runBertiniStartEDDegree(storeBM2Files,#F)--10
-
-stageWeightEDDegreeHomotopy=method()
-stageWeightEDDegreeHomotopy(NumericalComputationOptions,ZZ):=(NCO,stage)->(    
---stage is either 0, 1 or 2.
---Now we extract information from NCO.
-    theDir:=NCO#"Directory"; 
-    data:=NCO#(NCO#"FixedData");
-    jacL:=NCO#(NCO#"FixedJacobianSubmodel");
-    L:=NCO#(NCO#"FixedSubmodel");
---Other strings that are used
-    (lagMult,numerHB,denomQ,primal,tWeight):=("lagMult","numerHB","denomQ","primal","tWeight")   ; 
-    startWeight:=NCO#"StartWeight";
-    targetWeight:=NCO#"TargetWeight";
---First the model and submodel constraints
-------F is the model, V(G)\cap V(L) is a complete intersection contained in V(F)\cap V(L).
-    (F,G,startL,targetL,jacG):=(NCO#"Model",NCO#"WitnessModel",NCO#"StartSubmodel",NCO#"TargetSubmodel",NCO#"JacobianWitnessModel");
-    randomGamma:=NCO#"GammaVector";
-    xList:=NCO#"PrimalCoordinates";
-    nc:=#xList;
--- --Homogenize appropriately
-    (degSubmodel,degWitnessModel):=(NCO#"DegreeSubmodel",NCO#"DegreeWitnessModel");
-    maxDegree:=(degSubmodel|degWitnessModel|{3})//max;
-    degRescale:=({3}|degSubmodel|degWitnessModel)/(i->maxDegree-i);        
-    print 1;
---We have three rings. One ring for manipulating the Jacobian, one ring for manipulating the gradient, and one for manipulating both
---Gradient ring
-    print 2;
-    kk2:=ring first startWeight;
-    topS:=kk2[apply(nc,i->primal|i)]**kk2[{lagMult|"0",numerHB,denomQ,tWeight}];
-    (topL0,topNumerHB,topDenomQ,topTWeight):=toSequence flatten entries basis({0,1},topS);
-    primalList:=flatten entries basis({1,0},topS);
-    primalSub:=transpose{primalList,xList};
----Critical ring (LHS-RHS)
-    kk3:=ring first randomGamma    ;
-    critRing:=kk3[apply(nc,i->"critCondition"|i)];
-    critConditions:=apply(nc,i->(gens critRing)_i=>"LHS"|i|"-RHS"|i);
-    print critConditions;
-    randomizedCritConditions:=apply(drop(gens critRing,-1),randomGamma,(i,j)->i+j*last gens critRing);
---hyperplane
-    if stage==1 or stage==0 or stage==2 then hyperplaneAtInfinity:=makeB'Section(
-    	sum apply(nc,i->{data_i*(primalList_i)}),
-	B'NumberCoefficients=>{1},
-	NameB'Section=>numerHB);
-----Input file for stage 1 and stage 2.
-    win:=L|G|randomizedCritConditions;
---Gradient conditions (RHS)  (STAGE ONE)
-    if stage==0 or stage==1 then    RHS:=apply(nc,i->makeB'Section(
-	{topDenomQ*data_i,-topNumerHB*primalList_i*startWeight_i},
-	NameB'Section=>"RHS"|i,
-	B'NumberCoefficients=>{topL0*topNumerHB^(first degRescale),toString(topL0*topNumerHB^(first degRescale))}
-	));
-    if stage==0 or stage==1 then isoQ:=makeB'Section(
-    	sum apply(nc,i->{startWeight_i*(primalList_i)^2}),
-	B'NumberCoefficients=>{1},
-	NameB'Section=>denomQ);
---Jacobian ring
-    theR:=ring first F;
-    numX:=#gens theR;
-    kk1:=coefficientRing ring first F;
-    jacS:=theR**kk1[apply(#L+#G,i->lagMult|i+1)]**kk1[{numerHB,denomQ}|{tWeight}];
-    jacLamList:=flatten entries basis({0,1,0},jacS);
-    (jacNumerHB,jacDenomQ,jacTWeight):=toSequence flatten entries basis({0,0,1},jacS);
-    jacLV:=apply(jacLamList,drop(degRescale,1),(lam,j)->if j==0 
-	then lam else if j>0 then lam*jacNumerHB^j 
-	else print "Error: Homogenized incorrectly.");
-    --print LV; 
-    print 7;
-    startJacStartCondition:=flatten entries (matrix{jacLV}*sub((jacL||jacG),jacS));    
-    LHS:=apply(nc,i->"LHS"|i=>startJacStartCondition_i);
---Jacobian definition conditions (LHS) 
----SUPPORT FUNCTIONS
---Writing functions
-    print 8;
-    runWrite:=(stage,PG,nif,bfs)->(
-	makeB'InputFile(theDir,NameB'InputFile=>nif,
-	    HomVariableGroup=>(NCO#"HomogeneousVariableGroups")|{{topL0}|jacLamList},
-    	    AffVariableGroup=>NCO#"AffineVariableGroups",
-	    B'Configs=>{
-	    	"UseRegeneration"=>1,
-	    	"TrackType"=>0,
-	    	"ParameterHomotopy"=>stage,
-	    	"PrintPathProgress"=>1000}|(NCO#"BertiniStartFiberSolveConfiguration"),
-	    B'Polynomials=>win,
-    	    ParameterGroup=>PG,
-	    B'Functions=>bfs,
-	    B'Constants=>NCO#"BertiniConstants"));    
-    writeMTFile:=(s,k,bp,bfs)->makeB'InputFile(theDir,NameB'InputFile=>(defaultMTName|s|toString k),
-	--Which variables come first?
-	AffVariableGroup=>flatten flatten{NCO#"HomogeneousVariableGroups",{{topL0}|jacLamList},NCO#"AffineVariableGroups"},
-	B'Configs=>{"TrackType"=>k,"PrintPathProgress"=>1000}|(NCO#"BertiniMembershipTestConfiguration"),
-	B'Polynomials=>bp,
-	B'Functions=>bfs,
-	B'Constants=>NCO#"BertiniConstants"
-	);
-    print 9;
-    writeManyMT:=(stage,bfs)->(
-	writeMTFile("Residual"|stage|"_",1,{first last critConditions},bfs);
-    	writeMTFile("Residual"|stage|"_",3,{first last critConditions},bfs);
-    	writeMTFile("Degenerate"|stage|"_"|0|"_",1,{lagMult|"0"},bfs);
-  	writeMTFile("Degenerate"|stage|"_"|1|"_",1,{numerHB},bfs);
-  	writeMTFile("Degenerate"|stage|"_"|2|"_",1,{denomQ},bfs);
-    	writeMTFile("Degenerate"|stage|"_"|0|"_",3,{lagMult|"0"},bfs);
-  	writeMTFile("Degenerate"|stage|"_"|1|"_",3,{numerHB},bfs);
-  	writeMTFile("Degenerate"|stage|"_"|2|"_",3,{denomQ},bfs);
-    	scan(#F,i->(
-    	    writeMTFile("Hypersurface"|stage|"_"|i|"_",1,{F_i},bfs);
-    	    writeMTFile("Hypersurface"|stage|"_"|i|"_",3,{F_i},bfs);        ))  );
----Run membershipTest
-    print 10;
-    runMT:=(s)->(
-   	runBertini(theDir,NameB'InputFile=>defaultMTName|s|"1");
-	print (defaultMTName|s|"1");
-    	moveB'File(theDir,"bertini_session.log","bertini_session_MT_"|s|"1.log",CopyB'File => true);
-    	runBertini(theDir,NameB'InputFile=>defaultMTName|s|"3");
-	print (defaultMTName|s|"3");
-    	moveB'File(theDir,"bertini_session.log","bertini_session_MT_"|s|"3.log",CopyB'File => true);
-    	outIM:=importIncidenceMatrix(theDir);
-    	print outIM;
-    	return outIM);                                                                           
-    --Run Sort
-    print 11;
-    runSort:=(stage)->(
---	moveB'File(theDir,"nonsingular_solutions","member_points");
-	print "isResidual";
-	imResidual:=runMT("Residual"|stage|"_");
-	--Degenerate
-	print "isDegenerate";
-	imAllDegenerate:=apply(3,i->runMT("Degenerate"|stage|"_"|i|"_"));
-	--Hypersurfaces
-	print "isMemberOfVariety";
-	imAllHypersurfaces:=apply(#F,i->runMT("Hypersurface"|stage|"_"|i|"_"));
-	EDDeg:=0;
-	isMemberEveryHypersurface:=(i)->(
-	    output:=true;
-	    scan(imAllHypersurfaces,j->if {}==j_i then (output=false;break));
-	    return output);
-	isMemberAnyDegenerate:=(i)->(
-	    output:=false;
-	    scan(imAllDegenerate,j->if {}=!=j_i then (output=true;break));
-	    return output);
-    	ts:={};
-	scan(#imResidual,i->print( imResidual_i=!={}, not isMemberAnyDegenerate(i), isMemberEveryHypersurface(i)));
-	scan(#imResidual,i->if imResidual_i=!={} and not isMemberAnyDegenerate(i) and isMemberEveryHypersurface(i) 
-	    then (EDDeg=EDDeg+1; ts=ts|{1}) else ts=ts|{0});
-	NCO#"TrackSolutions"=ts;
-	print("EDDeg",EDDeg,"Stage",stage);
-	return EDDeg);
-    --RUN  more writing functions
-    print 11;    
---END Support functions
-    print 12;
---STAGE ONE
-    if stage==1 or stage==0
-    then (
-	nif:="inputCriticalPointSuperSet";
-    	bfs:=NCO#"BertiniSubstitute"|primalSub|{hyperplaneAtInfinity,isoQ}|RHS|LHS|critConditions;
-    	print(13,"A");
-    	runWrite(stageOne,{"asdfadagds"},nif,bfs);
-    	runBertini(theDir,NameB'InputFile=>nif);
-	print nif; 
-	moveB'File(theDir,"bertini_session.log","bertini_session_"|nif|".log",CopyB'File => true);
-	moveB'File(theDir,"nonsingular_solutions","member_points",CopyB'File => true);
-	moveB'File(theDir,"nonsingular_solutions","dummy");
-    	print(13,"B");
-	writeManyMT(stageOne,bfs);
-    	print(13,"C");
-    	GED:=runSort(stageOne));
-    print 9;
-    filterSolutionFile(NCO,"start",nc);
-    print 10;
---Gradient conditions (RHS)  (STAGE TWO)
-    if stage==2  or stage==0
-    then (writeParameterFile(theDir,{0},NameParameterFile=>"start_parameters");
-    	writeParameterFile(theDir,{1},NameParameterFile=>"final_parameters"));
-    print("D",1);
-    if stage==0 or stage==2 then    RHS=apply(nc,i->makeB'Section(
-	{topDenomQ*data_i,-topNumerHB*primalList_i*startWeight_i,-topNumerHB*primalList_i*targetWeight_i},
-	NameB'Section=>"RHS"|i,
-	B'NumberCoefficients=>{topL0*topNumerHB^(first degRescale),
-		    "(1-"|tWeight|")*"|toString(topL0*topNumerHB^(first degRescale)),
-		    tWeight|"*"|toString(topL0*topNumerHB^(first degRescale))}
-	));
-    if stage==2 then print("RHSMT",peek first RHS);
-    if stage==0 or stage==2 then    RHSMT:=apply(nc,i->makeB'Section(
-	{topDenomQ*data_i,-topNumerHB*primalList_i*targetWeight_i},
-	NameB'Section=>"RHS"|i,
-	B'NumberCoefficients=>{topL0*topNumerHB^(first degRescale),		   
-		    toString(topL0*topNumerHB^(first degRescale))}
-	));
-    if stage==2 then     print("RHSMT",peek first RHSMT);
-    if stage==0 or stage==2 then isoQ=makeB'Section(
-    	sum apply(nc,i->{startWeight_i*(primalList_i)^2,targetWeight_i*(primalList_i)^2}),
-	B'NumberCoefficients=>{"(1-"|tWeight|")",tWeight},
-	NameB'Section=>denomQ);
-    if stage==2 then     print ("ISOQ",peek isoQ);
-    if stage==0 or stage==2 then isoQMT:=makeB'Section(
-    	sum apply(nc,i->{targetWeight_i*(primalList_i)^2}),
-	B'NumberCoefficients=>{1},
-	NameB'Section=>denomQ);
-    if stage==2 then     print ("ISOQMT",peek isoQMT);
-    if stage==2 or stage==0
-    then (
-	nif="inputParameterHomotopySuperSet";
-    	bfs=NCO#"BertiniSubstitute"|primalSub|{hyperplaneAtInfinity,isoQ}|RHS|LHS|critConditions;
-    	print(8,"B");
-    	runWrite(stageTwo,{tWeight},nif,bfs);
-    	runBertini(theDir,NameB'InputFile=>nif);
-	print nif; 
-	moveB'File(theDir,"bertini_session.log","bertini_session_"|nif|".log",CopyB'File => true);
-	moveB'File(theDir,"nonsingular_solutions","member_points",CopyB'File => true);
-	moveB'File(theDir,"nonsingular_solutions","dummy2");
-    	print(8,"B");
-	RHS=RHSMT;
-	isoQ=isoQMT;
-    	bfs2:=NCO#"BertiniSubstitute"|primalSub|{hyperplaneAtInfinity,isoQ}|RHS|LHS|critConditions;
-	writeManyMT(stageTwo,bfs2);
-    	print(8,"C");
-    	UED:=runSort(stageTwo));
-    return(GED=>UED));
