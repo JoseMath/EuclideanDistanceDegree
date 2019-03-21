@@ -36,7 +36,8 @@ load"EDD_Numerical.m2"
 
 
 export { 
---load"EDD_Determinantal.m2"
+    "ReturnCriticalIdeal",
+    "experimentDualityDifference",
     "homotopyEDDegree",
     "symbolicWeightEDDegree",
     "determinantalUnitEuclideanDistanceDegree",
@@ -63,8 +64,8 @@ export {
     "numericWeightEDDegree",
 --    "numericUnitEDDegree",
     "numericEDDegree",
-    "weightEDDegreeHomotopy"    
-        }
+    "weightEDDegreeHomotopy"
+            }
 
 
 --###################################

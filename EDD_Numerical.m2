@@ -84,6 +84,7 @@ newNumericalComputationOptions(String,Sequence):=(theDir,P)->(
     NCO#"WeightVars"="wv";
     NCO#"Infinity"=null;
     NCO#"PairGeneralHyperplaneList"=null;
+    NCO#"IsProjective"=false;
     return NCO
     )
 
@@ -528,9 +529,245 @@ numericEDDegree(Sequence,String):=(P,typeED)->(
 --numericEDDegree(P,"Unit")
 
 
+--restart
+--loadPackage"Bertini"
+-*
+parameterizeConormalMatrixRankConstraint=(r,m,n,L,kk)->(
+    matrixVars:=(a,b,s)->for i to a-1 list for j to b-1 list (s|i|"v"|j);    
+    getMatrix=(aRing,a,b)->transpose genericMatrix(aRing,b,a);
+    getId=(m,v)->diagonalMatrix apply(m,i->v);
+--
+    ringPrimalSpan:=kk[(m-r,r,"PS")//matrixVars//flatten|{"PSH"}];
+    ringPrimalCenter:=kk[(r,r,"PC")//matrixVars//flatten|{"PCH"}];
+    ringDualSpan:=kk[(n-r,r,"DS")//matrixVars//flatten|{"DSH"}];
+    ringDualCenter:=kk[(m-r,n-r,"DC")//matrixVars//flatten|{"DCH"}];
+    ringData:=kk[flatten matrixVars(m,n,"u")];
+    ringWeight:=kk[flatten matrixVars(m,n,"w")];
+    allRings:={ringPrimalSpan,ringPrimalCenter,ringDualSpan,ringDualCenter,ringData,ringWeight};
+    sizeMatrix={(m-r,r),(r,r),(n-r,r), (m-r,n-r), (m,n),  (m,n)}; 
+    allMatrices= apply(allRings,sizeMatrix,(i,j)->getMatrix(i,j_0,j_1));
+    print allMatrices; 
+    lagRing=kk[apply(#L+1,i->"lag"|i)];
+    bigRing=ringData**ringWeight**lagRing;
+    scan(reverse drop(allRings,-2),i->bigRing=i**bigRing);
+    allHomogenizers= apply(allRings,i->last gens i);
+    print allHomogenizers;
+    (hps,hpc,hds,hdc,hu,hw)= (allHomogenizers/(i->sub(i,bigRing)))//toSequence;
+    print(hps,hpc,hds,hdc,hu,hw);
+    U=sub(transpose genericMatrix(ringData,n,m),bigRing);
+    print U;
+    W=transpose sub(genericMatrix(ringWeight,n,m),bigRing);
+    print W;
+    print 2;
+    mp0=sub(getId(last sizeMatrix_0,allHomogenizers_0)||allMatrices_0,bigRing);
+    print 3;
+    mp1=sub(allMatrices_1,bigRing);
+    print W;
+    print 4;
+    mp2=sub(getId(last sizeMatrix_0,allHomogenizers_2)|transpose allMatrices_2,bigRing);
+    print (mp0,mp1,mp2);
+    md0=sub((transpose allMatrices_0)||getId(first sizeMatrix_3,-allHomogenizers_0),bigRing);
+    md1=sub(allMatrices_3,bigRing);
+    print md1;    
+    md2=transpose sub(transpose allMatrices_2||getId(last sizeMatrix_3,-allHomogenizers_2),bigRing);
+    print md2;
+    print (md0,md1,md2);
+    P=hdc*(product\\{mp0,mp1,mp2});
+    print P;
+    Q=hpc*(product\\{md0,md1,md2});
+    print Q;
+    scan(#L,i->Q=Q+hpc*hps*hds*sub((gens lagRing)_(i+1),bigRing )*sub(L_i,bigRing));
+    linearSpace:=apply(#L,i->makeB'Section(flatten entries P));    
+    print linearSpace;
+    dataSlices={};
+--    (hps,hpc,hds,hdc,hu,hw)
+    scan(m,i->scan(n,
+	    j->dataSlices=dataSlices|{
+		makeB'Section({P_(i,j),-Q_(i,j),hpc*hdc*hps*hds*U_(i,j)},
+		    B'NumberCoefficients=>{1,W_(i,j),-1})})
+    ); --(x-u=w y) (x-u)
+--    return((mp0,mp1,mp2),(md0,md1,md2),dataSlices,linearSpace)
+    dir=temporaryFileName();
+    print dir;
+    if not fileExists dir then mkdir dir;
+--    HVG={gens ringPrimalSpan, gens ringPrimalCenter, 
+--	gens ringDualSpan, (gens ringDualCenter)|drop(gens lagRing,1)};    
+    HVG=flatten{drop(gens ringPrimalSpan,-1), drop(gens ringPrimalCenter,-1), 
+	drop(gens ringDualSpan,-1), (gens ringDualCenter)|drop(gens lagRing,1)};    
+    makeB'InputFile(dir,
+    	HomVariableGroup=>HVG,
+    	B'Polynomials=>linearSpace|dataSlices,
+    	B'Functions=>{PSH=>DCH,PCH=>DCH,DSH=>DCH},
+    	B'Configs=>{"UseRegeneration"=>1},
+    	RandomComplex=>(flatten entries U),
+	B'Constants=>apply(flatten entries W,i->i=>1 )	
+	);
+    return dir
+    )
+-*
+
+-*
+rm=()->matrix for i to 5-1 list for j to 5-1 list random CC
+rm()
+dir =parameterizeConormalMatrixRankConstraint(2,5,5,{rm(),rm(),rm()},CC)        
+runBertini(dir)
+R=QQ[p1,p2,p3,p4]
+
+pm=genericMatrix(R,2,2)
+l=p1-p2
+diff(pm,l)
+*-
+
+-*
+GEd(X cap L^s)-UED(X cap L^2)=GED(Z cap L^s)
+where Z=sing(X cap isoQ)
+R=QQ[x1,x2,x3,x4]
+Q=ideal sum (gens R/(i->i^2))
+X=minors(2,genericMatrix(R,2,2))
+decompose ideal singularLocus(Q+X)--4 points
+
+loadPackage"Bertini"
+R=QQ[x1,x2,x3,x4,x5,x6,x7,x8,x9]
+Q=ideal sum (gens R/(i->i^2))
+X=minors(2,genericMatrix(R,3,3))
+X=minors(2,genericMatrix(R,2,4))--2 components of degree 2 in dim3
+--bertiniPosDimSolve flatten entries gens ideal singularLocus(Q+X)
+Z=flatten entries gens radical ideal singularLocus(Q+X)
+bertiniPosDimSolve Z--This has two components of degree 2. 
+printGens  
+ideal Z==radical ideal Z
+conjecture--
+loadPackage"Bertini"
+(r,m,n)=(1,2,4)
+
+R=QQ[apply(m*n,i->"x"|i)]**QQ[apply((m-r)*(n-r),i->"y"|i)];
+Q=basis({1,0})//entries//flatten/(i->i^2)//sum//ideal
+X=genericMatrix(R,m,n)
+
+
+bertiniPosDimSolve flatten entries gens ideal singularLocus(Q+X)
+
+
+*-
 
 
 
+-*
+experimentDualityDifference=method()
+dualVariety=(F,codF)->(
+    R1:=ring first F;
+    kk:=coefficientRing R1;
+    R2:=kk[apply(#gens R1,i->"y"|i)];
+    R:=R1**R2;
+    M:=sub(matrix {gens R2},R)||sub(matrix makeJac(F,gens R1),R);
+    win:=sub(ideal(F),R)+minors(codF+1,M);        
+    E:=sub(eliminate(flatten entries basis({1,0},R),first decompose win),R2);
+    print"computed dual variety";
+    return E
+    )
+experimentDualityDifference(List,ZZ,ZZ):=(G,s,codF)->(
+    R1:=ring first G;
+    HS:=apply(s,i->random({1},R1));
+    F:=G|HS;    
+    adeg:=determinantalGenericEuclideanDistanceDegree F;
+    print("generic X cap Hs",adeg);
+    bdeg:=determinantalUnitEuclideanDistanceDegree F;
+    print("unit X cap Hs",bdeg);
+    R2:=QQ[apply(#gens R1,i->"y"|i)];
+    dF:=flatten entries gens dualVariety(F,codF+s);
+    cdeg:=determinantalGenericEuclideanDistanceDegree dF;
+    print("generic X^* cap Hs",cdeg);
+    ddeg:=determinantalUnitEuclideanDistanceDegree dF;
+    print("unit X* cap Hs",ddeg);
+    print(adeg,bdeg,cdeg,ddeg);
+    adeg-bdeg==cdeg-ddeg )
+*-
+
+
+-*
+restart
+loadPackage"EuclideanDistanceDegree"
+experimentDualityDifference
+R=QQ[x0,x1,x2,x3,x4,x5,x6]
+F={sum apply(gens R,i->i*i^2)}
+IQ=(L)->sum  apply(L,i->i^2)
+F={x0+x1,x2-x3,IQ({x1,x2,x3,x4,x5,x6})}
+(s,codF)=(1,#F)
+experimentDualityDifference(F,s,codF)
+
+R=QQ[x0,x1,x2,x3,x4,x5,x6]
+F={sum apply(gens R,i->i*i^2)}
+IQ=(L)->sum  apply(L,i->i^2)
+F={x0+x1,x2-x3,IQ {x1,x2,x3}, IQ{x2,x4,x5}}
+(s,codF)=(2,#F)
+experimentDualityDifference(F,s,codF)
+
+*-
+
+
+
+-*
+restart
+loadPackage"EuclideanDistanceDegree"
+R=QQ[x,y,z,w]
+--Calyx
+F={x^2+y^2*z^3-z^4}/(i->homogenize(i,w))
+experimentDualityDifference(F,1,1)
+
+determinantalUnitEuclideanDistanceDegree(F)--21
+primaryDecomposition ideal singularLocus ideal F
+
+--Calypso
+F={x^2+y^2*z-z^2}/(i->homogenize(i,w))
+experimentDualityDifference(F,1,1)
+
+determinantalUnitEuclideanDistanceDegree(F)--10
+primaryDecomposition ideal singularLocus ideal F
+
+--Crixxi
+F={(y^2+z^2-1)^2 +(x^2+y^2-1)^3}/(i->homogenize(i,w))
+experimentDualityDifference(F,1,1)
+
+determinantalUnitEuclideanDistanceDegree(F)--22
+primaryDecomposition ideal singularLocus ideal F
+
+--Cube
+R=QQ[x,y,z]
+F={x^6+y^6+z^6-1}/(i->homogenize(i,w))
+experimentDualityDifference(F,1,1)
+
+determinantalUnitEuclideanDistanceDegree(F)--180
+primaryDecomposition ideal singularLocus ideal F
+
+--Geisha
+F={x^2*y*z + x^2*z^2 - y^3*z - y^3 }/(i->homogenize(i,w))
+experimentDualityDifference(F,1,1)
+
+determinantalUnitEuclideanDistanceDegree(F)--15
+primaryDecomposition ideal singularLocus ideal F
+
+--Helix
+F={6*x^2-2*x^4-y^2*z^2}/(i->homogenize(i,w))
+experimentDualityDifference(F,1,1)
+determinantalUnitEuclideanDistanceDegree(F)--20
+primaryDecomposition ideal singularLocus ideal F
+
+--Himmel und Hölle --RECUCIBLE
+F={x^2-y^2*z^2}/(i->homogenize(i,w))
+experimentDualityDifference(F,1,1)
+determinantalUnitEuclideanDistanceDegree(F)--10
+primaryDecomposition ideal singularLocus ideal F
+
+--Kolibri
+F={x^3 + x^2*z^2 - y^2}/(i->homogenize(i,w))
+experimentDualityDifference(F,1,1)
+determinantalUnitEuclideanDistanceDegree(F)--15
+primaryDecomposition ideal singularLocus ideal F
+
+
+
+
+*-
 
 
 
@@ -856,7 +1093,7 @@ end
 
  
 ---EXAMPLES
-restart
+--restart
 --path=prepend("/Users/jo/Documents/GoodGit/EuclideanDistanceDegree",path)
 --loadPackage("EuclideanDistanceDegree",Reload=>true)
 
@@ -937,3 +1174,528 @@ runBertiniEDDegree(storeBM2Files)
 symbolicWeightEDDegree
 startEDDegree(storeBM2Files,F,G,L,Weight=>"Generic")
 runBertiniStartEDDegree(storeBM2Files,#F)--10
+
+restart
+loadPackage("EuclideanDistanceDegree",Reload=>true)
+R=QQ[x0,x1,x2]
+--f=x0^2*x1-x2*x3^2
+f=x0*x1-x2*(x1-x0)
+F={f}
+Z=radical  (ideal(sum apply(gens R,i->i^2))+ideal F)
+bertiniPosDimSolve flatten entries gens Z-- two lines
+determinantalGenericEuclideanDistanceDegree F
+determinantalUnitEuclideanDistanceDegree F
+
+
+determinantalGenericEuclideanDistanceDegree Z
+determinantalUnitEuclideanDistanceDegree Z
+
+
+
+
+restart
+loadPackage("EuclideanDistanceDegree",Reload=>true)
+R=QQ[x0,x1,x2,t,s,lam]
+xList={x0,x1,x2,t,s}
+f=x0*x1-x2*(x1-x0)
+--f=x0^2+x1^2-x2^2
+--F={f,t*(x0^2+x1^2+x2^2)}
+
+xList={x0,x1,x2}
+F={f}
+Z=radical  (ideal(sum apply(xList,i->i^2))+ideal F)
+bertiniPosDimSolve flatten entries gens Z-- two lines
+determinantalGenericEuclideanDistanceDegree F
+determinantalUnitEuclideanDistanceDegree F
+win=ideal F+ minors(#F+2,(
+    matrix transpose apply(xList,v->{v*(s+t*random(1,1000)),random(1,1000)})  )||matrix makeJac(F,xList)
+    )
+decWin= decompose win;
+netList decWin
+decWin/degree
+I= sub(first decWin,{t=>0,s=>1})
+decompose  I
+factor ( eliminate({x2},I))_0
+coefficients( ( eliminate({x2},first decWin))_0,Variables=>xList)
+decompose I
+
+
+
+
+restart
+loadPackage("EuclideanDistanceDegree",Reload=>true)
+R=QQ[x0,x1,x2,x3,t,s]
+f=x0*x1-x2*x3
+xList={x0,x1,x2,x3}
+F={f}
+Z=radical  (ideal(sum apply(xList,i->i^2))+ideal F)
+bertiniPosDimSolve flatten entries gens Z-- two lines
+determinantalGenericEuclideanDistanceDegree F
+determinantalUnitEuclideanDistanceDegree F
+win=ideal F+ minors(#F+2,(
+    matrix transpose apply(xList,v->{v*(s+t*random(1,1000)),random(1,1000)})  )||matrix makeJac(F,xList)
+    )
+decWin= decompose win;
+
+netList decWin
+decWin/degree
+I= sub(first decWin,{t=>0,s=>1})
+decI=decompose I
+decI/(i->i==i+Z)
+oo/degree
+
+
+
+I= sub(first decWin,{})
+
+coefficients( ( eliminate({x1,x2},I))_0,Variables=>xList)
+
+
+decompose  I
+oo/degree
+coefficients( ( eliminate({x2},I))_0,Variables=>xList)
+
+coefficients( ( eliminate({x2},first decWin))_0,Variables=>xList)
+decompose I
+
+---
+restart
+loadPackage("EuclideanDistanceDegree",Reload=>true)
+R=QQ[x0,x1,x2,x3,y,t,s,lam]
+xList={x0,x1,x2,x3,y}
+f=x0*x1-x2*x3
+g=(-y^2+sum apply(xList,i->i^2))-y
+F={f,g}
+Z=radical  (ideal(sum apply(xList,i->i^2))+ideal F)
+bertiniPosDimSolve flatten entries gens Z-- two lines
+determinantalGenericEuclideanDistanceDegree F
+determinantalUnitEuclideanDistanceDegree F
+win=ideal F+ minors(#F+2,(
+    matrix transpose apply(xList,v->{v*(random(1,1000)),random(1,1000)})  )||matrix makeJac(F,xList)
+    )
+
+win=ideal F+ minors(#F+2,(
+    matrix transpose apply(xList,v->{v*(s+t*random(1,1000)),random(1,1000)})  )||matrix makeJac(F,xList)
+    )
+
+printGens win
+decWin= decompose win;
+
+netList decWin
+decWin/degree
+I= sub(first decWin,{t=>0,s=>1})
+decompose I
+
+I= sub(first decWin,{})
+
+coefficients( ( eliminate({x1,x2},I))_0,Variables=>xList)
+
+
+restart
+loadPackage"EuclideanDistanceDegree"
+R=QQ[x1,x2,x3,x4]
+f=det matrix{{x1,x2,x4},
+    {x4,0,x3},
+    {0,x3,x4}}
+factor f
+F={f}
+determinantalGenericEuclideanDistanceDegree F
+determinantalUnitEuclideanDistanceDegree F
+
+
+restart
+loadPackage"EuclideanDistanceDegree"
+R=QQ[x1,x2,x3,x4,x5,x6,x7,x8,x9]
+M=transpose genericMatrix(R,3,3)
+F={x2-x4,x8-x6,x2-x8,det M}--(unit,generic)=(15,21)
+--bertiniPosDimSolve F--codim 4 and degree is 3. 
+#F==4
+P=(F,F,{})
+theDir
+NCO=newNumericalComputationOptions(theDir,P)
+help EuclideanDistanceDegree
+homotopyEDDegree(NCO,"Weight",true,true)                    
+
+
+
+restart
+loadPackage"EuclideanDistanceDegree"
+R=QQ[x1,x2,x3,x4,x5,x6,x7,x8,x9]
+M=transpose genericMatrix(R,3,3)
+F={x2-x4,x8-x6,det M}--(generic,unit)=(39,15)
+bertiniPosDimSolve F--codim 4 and degree is 3. 
+Q=ideal sum apply(gens R,i->i^2)
+--sl= ideal F+ideal mingens ideal singularLocus(Q+ideal F)
+--decSL=decompose sl;
+ netList decSL;
+decSL/codim---{7,7,7}
+decSL/degree --{2, 2, 4}  -->ED degrees are (2,2,10)
+---each of the first two lines intersects each of the second two lines (like a square)
+--2 of these points are also on the quartic. 
+--Intersection lattice: {line1a,line1b,line2a,line2b,quartic}--{2,2,2,2,2}
+primaryDecomposition ideal mingens ideal singularLocus sl ---4points
+radical (decSL_0+decSL_2)
+degree radical sum decSL
+
+#F==3
+P=(F,F,{})
+theDir
+NCO=newNumericalComputationOptions(theDir,P)
+help EuclideanDistanceDegree
+ NCO#"StartData"=apply(#gens R,i->random RR)
+ NCO#"StartData"=(.525992249534688+.888630754215339*ii)*{.474323, .269152, .859334, .370283, .785498, .263867, .468432, .743158, .514817}
+homotopyEDDegree(NCO,"Weight",true,true)                    
+cp=importSolutionsFile(theDir,NameSolutionsFile=>"criticalPointFile");
+first cp
+
+#cp
+S01=decompose radical(decSL_0+decSL_1)
+S02=decompose radical(decSL_0+decSL_2)
+S12=decompose radical(decSL_1+decSL_2)
+netList apply(S01|S02|S12,i->apply(S01|S02|S12,j->i==j))
+S01--two different components
+radical (sum S01)
+decompose radical sum decSL
+
+
+radical sum (S01|S02|S12)
+
+--singular locus is four lines. 
+quartic=sub(ideal(x3-x7,x1+x5+x9,x6-x8,x2-x4,x4^2+x5^2+x5*x9,x8^2-x5*x9,x4*x7+x5*x8+x8*x9,x5*x7-x4*x8,x7*x8-x4*x9,x7^2+x5*x9+x9^2),R)
+singularLocus quartic
+bertiniPosDimSolve flatten entries gens quartic
+codim quartic
+numgens quartic
+printGens quartic
+G={(x3-x7),
+(x1+x5+x9),
+(x6-x8),
+(x2-x4),
+(x4^2+x5^2+x5*x9),
+(x8^2-x5*x9),
+--(x4*x7+x5*x8+x8*x9),
+--(x5*x7-x4*x8),
+--(x7*x8-x4*x9),
+(x7^2+x5*x9+x9^2)}/(i->sub(i,R))
+#G
+#G
+codim quartic
+determinantalUnitEuclideanDistanceDegree
+bertiniPosDimSolve G
+P2=(flatten entries gens quartic,G,{})
+theDir2=storeBM2Files
+NCO2=newNumericalComputationOptions(theDir2,P2)
+
+--GED degree of quartic is 10. 
+help EuclideanDistanceDegree
+homotopyEDDegree(NCO2,"Weight",true,true)                    
+
+
+
+
+
+
+
+restart
+loadPackage"EuclideanDistanceDegree"
+R=QQ[m1,m2,m3,u1,u2,u3,x,y,z,w1,w2,w3]
+xList={x,y,z}
+mList={m1,m2,m3}
+mList={u1,u2,u3}
+f=x^2+y^2-4*z^2
+F={f}
+Z=radical  (ideal(sum apply(xList,i->i^2))+ideal F)
+bertiniPosDimSolve flatten entries gens Z-- two lines
+determinantalGenericEuclideanDistanceDegree F
+determinantalUnitEuclideanDistanceDegree F
+--GED--generic m. 
+genericM=matrix{{(1+m1)*(x-u1),(1+m2)*(y-u2),(1+m3)*(z-u3)}}||matrix makeJac(F,xList)
+fixGEDProblem={u1=>1,u2=>1,u3=>1}|{m1=>12,m2=>124,m3=>99}
+
+gedI=saturate((ideal F +minors(2,sub(genericM,fixGEDProblem))),ideal(x,y,z))
+4==degree gedI
+gedE=(eliminate({y,z},gedI))_*//first
+--UED
+fixUEDProblem={m1=>0,m2=>0,m3=>0}
+uedI=saturate((ideal F +minors(2,sub(genericM,fixUEDProblem))),ideal(x,y,z))
+2==degree sub(uedI,{u1=>134,u2=>3414,u3=>13444})
+uedE=(eliminate({y,z},uedI))_*//first
+
+
+wM=matrix{{w1*(x-u1),w2*(y-u2),w3*(z-u3)}}||matrix makeJac(feg Z,xList)
+zedI=saturate((Z+minors(codim Z+1,wM)),ideal(x,y,z))
+
+degree sub( saturate((Z+minors(codim Z+1,wM)),ideal(x,y,z)),fixUEDProblem|{w1=>134,w2=>2355,w3=>455})
+zedE=(eliminate({y,z},zedI))_*//first
+
+doubleProblem=ideal mingens ideal last coefficients(zedE*uedE-gedE,Variables=>{x})
+codim 
+printGens ideal mingens sub(doubleProblem,{u2=>124,u3=>35,w1=>342,w2=>242})
+
+
+bigI=uedI+gedI+zedI
+decompose bigI
+
+coefficients((eliminate({z,y},saturate(uedI,radical ideal singularLocus ideal F)))_0,Variables=>{x})
+coefficients((eliminate({z,y},saturate(gedI,radical ideal singularLocus ideal F)))_0,Variables=>{x})
+
+
+g1=(eliminate({z,y},saturate(uedI,radical ideal singularLocus ideal F)))_0
+g2=(eliminate({z,y},saturate(gedI,radical ideal singularLocus ideal F)))_0
+
+S=frac (QQ[m1,m2,m3,u1,u2,u3])[x,y,z]
+coefficientRing S
+h1=sub(g1,S)
+h2=sub(g2,S)
+win=h2%ideal h1
+toString (last coefficients win)_(0,0)
+
+
+T=QQ[m1,m2,m3,u1,u2,u3]
+umI=gcd(sub((last coefficients win)_(0,0),T),sub((last coefficients win)_(1,0),T))
+
+
+--decompose umI
+
+apropos"rder"
+help MonomialOrderin
+leadCoefficient(g1)
+g2% g1
+
+
+
+matrix transpose apply(xList,v->{v*(1+mLis),random(1,1000)})  )||matrix makeJac(F,xList)
+gedProblem=
+ideal F
+
+minors(#F+2,(
+    
+    )
+
+win=ideal F+ 
+
+
+----Let's consider 2x2 rank one matrices
+restart
+loadPackage"EuclideanDistanceDegree"
+R=QQ[x1,x2,x3,x4]
+M=transpose genericMatrix(R,2,2)
+F={det M}--(generic,unit)=(6,2)
+bertiniPosDimSolve F--projective dim 2 and degree is 2
+Q=ideal sum apply(gens R,i->i^2)
+sl= ideal mingens ideal singularLocus(Q+ideal F)
+decSL=decompose sl;
+ netList decSL
+decSL/codim
+decSL/degree 
+--singular locus is four projective points 
+bertiniPosDimSolve flatten entries gens sl--4 projective points. 
+#F==1
+P=(F,F,{})
+theDir
+NCO=newNumericalComputationOptions(theDir,P)
+help EuclideanDistanceDegree
+homotopyEDDegree(NCO,"Weight",true,true)   --(6,2)                 
+
+cp=importSolutionsFile(theDir,NameSolutionsFile=>"criticalPointFile")
+netList cp
+---
+R=QQ[m0,m1,m2,m3,m4,u1,u2,u3,u4,x1,x2,x3,x4,w1,w2,w3,w4,s,t]
+xList={x1,x2,x3,x4}
+mList={m1,m2,m3,m4}
+uList={u1,u2,u3,u4}
+wList={w1,w2,w3,w4}
+Q=ideal sum apply(xList,i->i^2)
+f=x1*x2-x3*x4
+F={f}
+Z=radical  (ideal(sum apply(xList,i->i^2))+ideal F)
+bertiniPosDimSolve flatten entries gens Z-- two lines
+determinantalGenericEuclideanDistanceDegree F
+determinantalUnitEuclideanDistanceDegree F
+--GED--generic m. 
+
+M=matrix{uList}||matrix{wList}*diagonalMatrix xList||matrix makeJac(F,xList)
+--B=matrix{}||matrix{mList}||matrix{wList}
+wSub=apply(mList,uList/(i->1),(a,b)->a*s+m0*b*t);wSub=apply(wList,wSub,(i,j)->i=>j)
+wSub
+I=minors(codim ideal F+2,sub(M,wSub))
+I=saturate(I,ideal(t,s))
+I=saturate(I+ideal F,ideal(t,s))
+I=saturate(I,ideal xList);
+I=saturate(I,ideal {m0,m1,m2,m3,m4});
+I=saturate(I,ideal {m0});
+
+--uSub=uList/(i->i=>random(1,100))
+uSub={u1 => 32, u2 => 28, u3 => 13, u4 => 29}
+E=eliminate({x1,x2},sub(I,uSub))
+printGens sub(E,{s=>0})
+(t)^4*(x3-x4)^2*(x3+x4)^2*(m0)^4*(99161*x3^2-226802*x3*x4+99161*x4^2)*(16)
+
+
+I2= sub(I,{s=>0,t=>1})
+A=saturate(I2,m0)
+decA=decompose A
+apply(decA,i->i+Q==i)--two of the three components are in the isotrpica quadric
+twoPointsA= sub(first decA,uSub)
+3==codim twoPointsA
+2==degree twoPointsA
+eliminate({x1,x2},twoPointsA)
+
+
+twoPointsStandard=first decompose (minors(3,sub(M,uSub|(wList/(i->i=>1))))+ideal F)
+codim twoPointsStandard
+2===degree twoPointsStandard
+twoPointsStandard==twoPointsA
+
+
+
+
+
+
+
+---Let's try 2x3 matrices. Want positive dimensional Z.
+---
+R=QQ[m0,m1,m2,m3,m4,m5,m6,u1,u2,u3,u4,u5,u6,x1,x2,x3,x4,x5,x6,w1,w2,w3,w4,w5,w6,s,t]
+xList={x1,x2,x3,x4,x5,x6}
+mList={m1,m2,m3,m4,m5,m6}
+uList={u1,u2,u3,u4,u5,u6}
+wList={w1,w2,w3,w4,w5,w6}
+Q=ideal sum apply(xList,i->i^2)
+F=flatten entries gens minors(2,matrix{{x1,x2,x3},{x4,x5,x6}})
+Z=radical  (ideal(sum apply(xList,i->i^2))+ideal F)
+
+bertiniPosDimSolve flatten entries gens Z-- #gens R-24==3--codimension is 3 and projective dimension of Z is 5-3
+(decompose Z)/gens/entries/flatten/bertiniPosDimSolve
+--We have 2 lines and a quartic
+determinantalGenericEuclideanDistanceDegree F--10
+determinantalUnitEuclideanDistanceDegree F--2
+--GED--generic m. 
+
+M=matrix{uList}||matrix{wList}*diagonalMatrix xList||matrix makeJac(F,xList)
+--B=matrix{}||matrix{mList}||matrix{wList}
+wSub=apply(mList,uList/(i->1),(a,b)->a*s+m0*b*t);wSub=apply(wList,wSub,(i,j)->i=>j)
+wSub
+uSub={u1 => 32, u2 => 28, u3 => 13, u4 => 29}
+I=sub(minors(codim ideal F+2,sub(M,wSub)),uSub);
+I=ideal mingens ideal(gens I % ideal F)
+I=sub(I,{m0=>1})
+printGens I
+
+I=saturate(I,ideal(t,s));
+I=saturate(I+ideal F,ideal(t,s));
+I=saturate(I,ideal xList);
+I=saturate(I,ideal {m0,m1,m2,m3,m4});
+I=saturate(I,ideal {m0});
+
+--uSub=uList/(i->i=>random(1,100))
+
+E=eliminate({x1,x2},sub(I,uSub))
+printGens sub(E,{s=>0})
+(t)^4*(x3-x4)^2*(x3+x4)^2*(m0)^4*(99161*x3^2-226802*x3*x4+99161*x4^2)*(16)
+
+
+I2= sub(I,{s=>0,t=>1})
+A=saturate(I2,m0)
+decA=decompose A
+apply(decA,i->i+Q==i)--two of the three components are in the isotrpica quadric
+twoPointsA= sub(first decA,uSub)
+3==codim twoPointsA
+2==degree twoPointsA
+eliminate({x1,x2},twoPointsA)
+
+
+twoPointsStandard=first decompose (minors(3,sub(M,uSub|(wList/(i->i=>1))))+ideal F)
+codim twoPointsStandard
+2===degree twoPointsStandard
+twoPointsStandard==twoPointsA
+
+
+
+----Max's prediction. 
+restart
+printingPrecision =100
+loadPackage"EuclideanDistanceDegree"
+help EuclideanDistanceDegree
+R=QQ[x1,x2,x3,x4,x5,x6]
+M=transpose genericMatrix(R,3,2)
+F=flatten entries gens minors(2,M)
+G=drop(F,1)
+P=(F,G,{})
+theDir=temporaryFileName();mkdir theDir
+NCO=newNumericalComputationOptions(theDir,P)
+fixM={.935612+.780809*ii, .71813+.874296*ii, .056595+.850869*ii, .980549+.247701*ii, .595609+.191267*ii, .02298+.610646*ii}
+fixW=apply(fixM,i->i+1)
+fixV={.72466+.412908*ii, .20736+.413345*ii, .161095+.942996*ii, .653861+.917835*ii, .621858+.739543*ii, .22654+.870631*ii}
+fixU=apply(#fixW,(i)->fixV_i/fixW_i*fixM_i)
+--(1+m)*u=m*u
+NCO#"TargetWeight"=fixW
+NCO#"StartData"=fixU
+
+homotopyEDDegree(NCO,"Weight",true, true)
+elevenPoints=importSolutionsFile(theDir,NameSolutionsFile=>"criticalPointFile")
+#elevenPoints==11
+
+Z=radical ideal mingens ideal singularLocus (ideal F+ideal sum apply (gens R,i->i^2))
+printGens Z
+--bertiniPosDimSolve flatten entries gens Z
+--      dim 2:  (dim=2,deg=2) (dim=2,deg=2)
+--0==determinantalUnitEuclideanDistanceDegree flatten entries gens Z
+--8==determinantalGenericEuclideanDistanceDegree flatten entries gens Z
+
+4==codim Z
+printGens Z
+zg=Z_*
+GZ=ideal {zg_0,zg_2,zg_4,zg_8}
+codim Z==codim GZ
+decompose GZ
+PZ=(Z_*,GZ_*,{})
+theDir=temporaryFileName();mkdir theDir
+ZNCO=newNumericalComputationOptions(theDir,PZ)
+ZNCO#"StartWeight"=fixM
+ZNCO#"StartData"=fixV
+homotopyEDDegree(ZNCO,"Weight",true, false)
+
+eightPoints=importSolutionsFile(theDir,NameSolutionsFile=>"filterFile");
+#eightPoints==8
+pickOneOfEight=(i,eightPoints)->(
+    onePoint=eightPoints_i;
+    onePoint=drop(onePoint,#(GZ_*)+1);
+    onePoint=(1/first onePoint)*onePoint    )
+onePoint=pickOneOfEight(1,eightPoints)
+
+--drop 5==#(GZ_*)+1 coordinates 
+first\ apply(elevenPoints,i->((1/i_(#G+1))*drop(i,#G+1)))
+netList\\apply(elevenPoints,i->((1/i_(#G+1))*drop(i,#G+2)))
+onePoint
+
+---Let's try symbolic computation.
+R=QQ[s,t,x1,x2,x3,x4,x5,x6,m0]
+xList={x1,x2,x3,x4,x5,x6}
+M=matrix{{x1,x2,x3},{x4,x5,x6}}
+F=flatten entries gens minors(2,M)
+wFix=apply(xList,i->random(1,100))
+uFix=apply(xList,i->random(1,100))
+mFix={53, 67, 83, 1, 64, 96}
+
+critM=(matrix{uFix}||
+matrix{apply(#xList,i->(mFix_i*s+t)*xList_i)}||
+matrix makeJac(F,xList))
+
+Z=radical ideal mingens ideal singularLocus (ideal F+ideal sum apply (xList,i->i^2))
+zg=Z_*
+GZ=ideal {zg_0,zg_2,zg_4,zg_8}
+
+critZ=Z+minors(2+codim Z,
+    matrix{uFix}||(matrix{apply(#xList,i->(mFix_i*s+t*m0)*xList_i)}
+	)||matrix makeJac(zg,xList));
+decCZ=decompose ideal mingens critZ;
+decCZ/degree
+last decCZ
+printGens last decCZ
+printGens 
+--degree first decCZ
+decCZ/codim
+
+intersectZF=ideal mingens(minors(codim ideal F+2,critM)+ideal F    +last decCZ)
+decompose radical intersectZF
+degree first oo

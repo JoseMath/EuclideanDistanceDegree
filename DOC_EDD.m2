@@ -70,9 +70,11 @@ doc /// --EuclideanDistanceDegree
     	P=(F,G)
 	NCO=newNumericalComputationOptions(dir,P)
     	NCO#"TargetWeight"=apply(#gens R,i->1)
-	homotopyEDDegree(NCO,"Weight",true,true)
-    	NCO#"TargetWeight"=(apply(-1+#gens R,i->1))|{0}
-	homotopyEDDegree(NCO,"Weight",false,true)
+	2==homotopyEDDegree(NCO,"Weight",true,true)
+    	NCO#"TargetWeight"=(apply(#gens R,i->random RR))
+	10==homotopyEDDegree(NCO,"Weight",false,true)
+      Text
+      	One may also compute crtiical points for different data using a parameter homotopy called a Data-ED Degree Homotopy. 
       Example
     	dir=temporaryFileName();if not fileExists dir then mkdir dir;
         R=QQ[x1,x2,x3,x4,x5,x6]
@@ -82,9 +84,11 @@ doc /// --EuclideanDistanceDegree
     	P=(F,G)
 	NCO=newNumericalComputationOptions(dir,P)
     	NCO#"TargetData"=apply(#gens R,i->1)
-	homotopyEDDegree(NCO,"Data",true,true)
-    	NCO#"TargetWeight"=(apply(-1+#gens R,i->1))|{0}
+	10==homotopyEDDegree(NCO,"Data",true,true)
+	importSolutionsFile(NCO#"Directory",NameSolutionsFile=>"member_points")	
+    	NCO#"TargetWeight"={0}|(apply(-1+#gens R,i->1))
 	homotopyEDDegree(NCO,"Data",false,true)
+	importSolutionsFile(NCO#"Directory",NameSolutionsFile=>"member_points")	
 ///;
 
 
@@ -92,28 +96,67 @@ end
 
 restart
 installPackage"EuclideanDistanceDegree"
-R1=QQ[x1,x2,x3,x4]
-R2=QQ[y1,y2,y3,y4]
 
-f=det genericMatrix(R1,2,2)
-F={f}
-F={x1^3+x2*x3^2+x4^3}
-F={x1^3-x2*x3^2}
-F={x1^4-x2*x3^3-x2*x3^3}
-
-dualVariety=(F,R1,R2,c)->(
+dualVariety=(F,codF)->(
+    R1:=ring first F;
+    R2:=QQ[apply(#gens R1,i->"y"|i)];
     R:=R1**R2;
     M:=sub(matrix {gens R2},R)||sub(matrix makeJac(F,gens R1),R);
-    win:=sub(ideal(F),R)+minors(c+1,M);        
+    win:=sub(ideal(F),R)+minors(codF+1,M);        
     sub(eliminate(flatten entries basis({1,0},R),first decompose win),R2)
     )
-determinantalGenericEuclideanDistanceDegree F
-determinantalUnitEuclideanDistanceDegree F
+runTestSymbolic=(G,s,codF)->(
+    R1:=ring first G;
+    HS:=apply(s,i->random({1},R1));
+    F:=G|HS;    
+    adeg=determinantalGenericEuclideanDistanceDegree F;
+    print("generic X cap Hs",adeg);
+    bdeg=determinantalUnitEuclideanDistanceDegree F;
+    print("unit X cap Hs",bdeg);
+--    R2:=QQ[apply(#gens R1,i->"y"|i)];
+    dF=flatten entries gens dualVariety(F,codF+s);
+    cdeg=determinantalGenericEuclideanDistanceDegree dF;
+    print("generic X^* cap Hs",cdeg);
+    ddeg=determinantalUnitEuclideanDistanceDegree dF;
+    print("unit X* cap Hs",ddeg);
+    print(adeg,bdeg,cdeg,ddeg);
+    adeg-bdeg==cdeg-ddeg )
+--
+R1=QQ[x1,x2,x3,x4]
+f=det genericMatrix(R1,2,2)
+G={f}
+runTestSymbolic(G,0,1)
+--
+R1=QQ[x1,x2,x3,x4]
+G={x1^3+x2*x3^2+x4^3}
+runTestSymbolic(G,0,1)--(15, 15, 15, 15)
+--
+R1=QQ[x1,x2,x3,x4]
+G={(x1^2+x2^2+x3^2)^2-x1*x2*x3*x4}
+runTestSymbolic(G,0,1)--
+--(25,25,25,25)
+
+--
+R1=QQ[x1,x2,x3]
+G={(x1^2+x2^2+x3^2)^2-(x1+x2)^3*x3}
+runTestSymbolic(G,0,1)--
+--(10, 8, 10, 8)
+runTestSymbolic(G,1,1)--
+--(4, 4, 4, 4)
+
+--
+R1=QQ[x1,x2,x3,x4]
+G={(x1^2+x2^2+x3^2)^2-x1*x2*x3*x4}
+runTestSymbolic(G,0,1)--
+
+
+F={x1^3-x2*x3^2}
+F={x1^4-x2*x3^3-x2*x3^3}
 dF=flatten entries gens dualVariety(F,R1,R2,1)
 determinantalGenericEuclideanDistanceDegree dF
 determinantalUnitEuclideanDistanceDegree dF
 
-
+runTestSymbolic()
 
 
 conormal=conormal+ideal  f
