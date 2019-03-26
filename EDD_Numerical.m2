@@ -43,11 +43,13 @@ bertiniKeys={    "BertiniStartFiberSolveConfiguration","BertiniMembershipTestCon
 coordinateKeys={    "PrimalCoordinates",    "HomogeneousVariableGroups",    "AffineVariableGroups"    }
 directoryKeys={"Directory"} 
 solutionKeys={"TrackSolutions"}
+outputKeys={"OutputKeys"}
+
 fixValues={"FixedData","FixedWeight","FixedSubmodel","FixedJacobianSubmodel"}
-nocKeys=parameterKeys|jacKeys|modelKeys|degreeKeys|bertiniKeys|coordinateKeys|directoryKeys|solutionKeys|fixValues
+nocKeys=parameterKeys|jacKeys|modelKeys|degreeKeys|bertiniKeys|coordinateKeys|directoryKeys|solutionKeys|fixValues|outputKeys
 
 defaultFixValues={"StartData","StartWeight","StartSubmodel","JacobianStartSubmodel"}
-
+outputValues={"Standard","TestHomotopyConjectureGEDvUED"}
 
 
 newNumericalComputationOptions=method()
@@ -85,10 +87,11 @@ newNumericalComputationOptions(String,Sequence):=(theDir,P)->(
     NCO#"Infinity"=null;
     NCO#"PairGeneralHyperplaneList"=null;
     NCO#"IsProjective"=false;
+    NCO#"OutputType"="Standard"
     return NCO
     )
 
-defaultFixValues={"StartData","StartWeight","StartSubmodel","JacobianStartSubmodel"}
+--defaultFixValues={"StartData","StartWeight","StartSubmodel","JacobianStartSubmodel"}
 -*
 restart
 printingPrecision=100
@@ -1632,7 +1635,7 @@ NCO#"TargetWeight"=fixW
 NCO#"StartData"=fixU
 
 homotopyEDDegree(NCO,"Weight",true, true)
-elevenPoints=importSolutionsFile(theDir,NameSolutionsFile=>"criticalPointFile")
+elevenPoints=importSolutionsFile(theDir,NameSolutionsFile=>"criticalPointFile");
 #elevenPoints==11
 
 Z=radical ideal mingens ideal singularLocus (ideal F+ideal sum apply (gens R,i->i^2))
@@ -1662,6 +1665,8 @@ pickOneOfEight=(i,eightPoints)->(
     onePoint=drop(onePoint,#(GZ_*)+1);
     onePoint=(1/first onePoint)*onePoint    )
 onePoint=pickOneOfEight(1,eightPoints)
+
+apply(#eightPoints,i->pickOneOfEight(i,eightPoints))
 
 --drop 5==#(GZ_*)+1 coordinates 
 first\ apply(elevenPoints,i->((1/i_(#G+1))*drop(i,#G+1)))
@@ -1699,3 +1704,59 @@ decCZ/codim
 intersectZF=ideal mingens(minors(codim ideal F+2,critM)+ideal F    +last decCZ)
 decompose radical intersectZF
 degree first oo
+
+
+
+---Let's try the nodal curve
+restart
+printingPrecision =100
+loadPackage"EuclideanDistanceDegree"
+help EuclideanDistanceDegree
+R=QQ[x,y,z]
+G=F={x^2-y^3}
+P=(F,G,{})
+theDir=temporaryFileName();mkdir theDir
+NCO=newNumericalComputationOptions(theDir,P)
+fixM={.935612+.780809*ii, .71813+.874296*ii, .056595+.850869*ii}
+fixW=apply(fixM,i->i+1)
+fixV={.72466+.412908*ii, .20736+.413345*ii, .161095+.942996*ii}
+fixU=apply(#fixW,(i)->fixV_i/fixW_i*fixM_i)
+--(1+m)*u=m*u
+NCO#"TargetWeight"=fixW
+NCO#"StartData"=fixU
+
+homotopyEDDegree(NCO,"Weight",true, true)
+newPoints=importSolutionsFile(theDir,NameSolutionsFile=>"criticalPointFile")
+
+Z=radical ideal mingens ideal singularLocus (ideal F+ideal sum apply (gens R,i->i^2))
+printGens Z
+--bertiniPosDimSolve flatten entries gens Z
+--      dim 2:  (dim=2,deg=2) (dim=2,deg=2)
+--0==determinantalUnitEuclideanDistanceDegree flatten entries gens Z
+--8==determinantalGenericEuclideanDistanceDegree flatten entries gens Z
+
+4==codim Z
+printGens Z
+zg=Z_*
+GZ=ideal {zg_0,zg_2,zg_4,zg_8}
+codim Z==codim GZ
+decompose GZ
+PZ=(Z_*,GZ_*,{})
+theDir=temporaryFileName();mkdir theDir
+ZNCO=newNumericalComputationOptions(theDir,PZ)
+ZNCO#"StartWeight"=fixM
+ZNCO#"StartData"=fixV
+homotopyEDDegree(ZNCO,"Weight",true, false)
+
+eightPoints=importSolutionsFile(theDir,NameSolutionsFile=>"filterFile");
+#eightPoints==8
+pickOneOfEight=(i,eightPoints)->(
+    onePoint=eightPoints_i;
+    onePoint=drop(onePoint,#(GZ_*)+1);
+    onePoint=(1/first onePoint)*onePoint    )
+onePoint=pickOneOfEight(1,eightPoints)
+
+--drop 5==#(GZ_*)+1 coordinates 
+first\ apply(elevenPoints,i->((1/i_(#G+1))*drop(i,#G+1)))
+netList\\apply(elevenPoints,i->((1/i_(#G+1))*drop(i,#G+2)))
+onePoint

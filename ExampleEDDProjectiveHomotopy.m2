@@ -1,7 +1,6 @@
 --This M2 works out some preliminary examples to motivate a project studying generic ED Degrees. 
 ----Result (1): A homotopy approach to solve nearest point problems for weighted least squares. 
 ----Result (2): Duality proven for rank one matrices and corank one matrices
-
 ----Corollary: Intersecting with a model with a general linear space is now well understood.
 
 
