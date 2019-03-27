@@ -13,31 +13,48 @@ printingPrecision =100
 --loadPackage"EuclideanDistanceDegree"
 --help EuclideanDistanceDegree
 needsPackage("Bertini")
-R=QQ[u1,u2,u3,u4,u5,u6,w1,w2,w3,w4,w5,w6,x1,x2,x3,x4,x5,x6,L0,L1,L2,L3,L4,L5,L6]
-xList={x1,x2,x3,x4,x5,x6}
-wList={w1,w2,w3,w4,w5,w6}
-uList={u1,u2,u3,u4,u5,u6}
-lagList={L0,L1,L2,L3,L4,L5,L6}
-M=matrix{{x1,x2,x3},{x4,x5,x6}}
-F=flatten entries gens minors(2,M)--F is not a complete intersection.
-G=drop(F,1)--G is a complete intersection such that V(F) is contained in V(G) as an irreducible component.
-theDir=temporaryFileName();mkdir theDir
-print theDir
- 
-M=matrix{uList}||matrix {apply(xList,wList,(i,j)->i*j)}||matrix makeJac(G,xList)
-cEqu=(ideal(matrix{{L0,L1,L2,L3}}*M))_*
-uSub=apply(uList,i->i=>random CC)
-uSub={u1 => .437976264949257+.458082647800926*ii, u2 => .202827685631432+.494462510887304*ii, u3 => .265750610397259+.956260475610544*ii, u4 => .386065899883386+.761726882971112*ii, u5 => .813562119489001+.949531286791245*ii, u6 => .907947495546488+.285832262201472*ii}
 
-S=CC[r,t]
-wSub=apply(wList,i->i=>random CC*r+t)
-print toString oo
-wSub={w1 => (.412956862937663+.22500087147758*ii)*r+t, w2 => (.864160843906586+.513961647290348*ii)*r+t, w3 => (.933706921404453+.374950521798492*ii)*r+t, w4 => (.282411917737877+.0392926459311801*ii)*r+t, w5 => (.232646975110094+.898207105162729*ii)*r+t, w6 => (.358104555818471+.782058827435617*ii)*r+t}
+makeVar=(setN,x)->apply(setN,i->value(x|i))
+TestConjectureGEDvUED=new Type of MutableHashTable 
+newTestConjectureGEDvUED=(setN)->(
+    theDir:=temporaryFileName();mkdir theDir;
+    print theDir;    
+    tc:=new TestConjectureGEDvUED from	{
+	"ccR"=>CC[makeVar(setN,"u")|makeVar(setN,"w")|makeVar(setN,"x")|makeVar(setN+1,"L")],
+	"ccS"=>CC[r,t],
+    	"qqR"=>QQ[makeVar(setN,"u")|makeVar(setN,"w")|makeVar(setN,"x")|makeVar(setN+1,"L")],    	
+	"xList"=>makeVar(setN,"x"),
+	"wList"=>makeVar(setN,"w"),
+	"uList"=>makeVar(setN,"u"),
+	"lagList"=>makeVar(setN+1,"L"),
+	"Directory"=>theDir};
+    print 1;
+    tc#"xFix"=apply(tc#"xList",i->i=>random CC);
+    tc#"wFix"=apply(tc#"wList",i->i=>random CC*r+t);
+    tc#"uFix"=apply(tc#"uList",i->i=>random CC);
+    tc#"hyperplane"=makeB'Section(tc#"xList",NameB'Section=>"HX");
+    return tc
+)
+inputModel=(tc,F,G)->(
+    M:=matrix{tc#"uList"}||matrix {apply(tc#"xList",tc#"wList",(i,j)->i*j)}||matrix makeJac(G,tc#"xList");
+    tc#"F"=F;
+    tc#"G"=G;
+    tc#"M"=M;
+    useL:=apply(#tc#"G"+2,i->(tc#"lagList"#i));
+    print useL;
+    tc#"cEqu"=(ideal(matrix{useL}*tc#"M"))_*    )
+
+tc=newTestConjectureGEDvUED(6);
+peek tc
+R= tc#"qqR";use R;
+F=flatten entries gens minors(2,matrix{{x0,x1,x2},{x3,x4,x5}})--F is not a complete intersection.
+G=drop(F,1)--G is a complete intersection such that V(F) is contained in V(G) as an irreducible component.
+inputModel(tc,F,G)
 
 makeB'InputFile(theDir,
     HomVariableGroup=>{xList,{s0,s1,s2,s3}},    
     B'Constants=>uSub|{r=>1,t=>1},
-    B'Functions=>wSub|{HX}|{L0=>"s0*HX",L1=>s1,L2=>s2,L3=>s3},
+    B'Functions=>wSub|{hyperplane}|{L0=>"s0*HX",L1=>s1,L2=>s2,L3=>s3},
     B'Polynomials=>G|cEqu
     )
 runBertini(theDir)
@@ -48,7 +65,7 @@ makeB'InputFile(theDir,
     ParameterGroup=>{r},
     B'Configs=>{"ParameterHomotopy"=>2},  
     B'Constants=>uSub|{t=>1},
-    B'Functions=>wSub|{HX}|{L0=>"s0*HX",L1=>s1,L2=>s2,L3=>s3},
+    B'Functions=>wSub|{hyperplane}|{L0=>"s0*HX",L1=>s1,L2=>s2,L3=>s3},
     B'Polynomials=>G|cEqu
     )
 writeParameterFile(theDir,{1},NameParameterFile=>"start_parameters")
@@ -65,7 +82,7 @@ decompose Z
 4==codim Z
 printGens Z
 zg=Z_*
-bertiniPosDimSolve zg
+--bertiniPosDimSolve zg
 ZG=(ideal {zg_0,zg_2,zg_4,zg_8})_*
 (decompose ideal ZG)/radical/degree
 

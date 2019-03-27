@@ -190,3 +190,60 @@ determinantalGenericEuclideanDistanceDegree(F)
 {8,120}
 leftKernelGenericEDDegree(storeBM2Files,1,F)
 runBertiniEDDegree(storeBM2Files)
+
+
+
+----
+loadPackage"EuclideanDistanceDegree"
+R=QQ[x,y,z,w]
+F={det genericMatrix(R,2,2),y-z}
+determinantalUnitEuclideanDistanceDegree(F)
+determinantalGenericEuclideanDistanceDegree(F)
+primaryDecomposition ideal singularLocus ideal F
+codim first decompose ideal singularLocus (ideal F+ideal(gens R/(i->i^2)//sum))
+---
+
+R=QQ[x,y,z,w]
+F={x^2*w+y^2*w-z^3}
+F={x^2*w+y^2*w-z^2*x}
+F={(x^2+y^2+z^2+w^2)*x-w^3}--codim 1 and irreducible (GED,UED)=(15,5)
+
+F={(x^2+y^2+z^2+w^2)*x-y*w^2}--codim 1 and irreducible (GED,UED)=(17,9)
+F={(x^2+y^2+z^2+w^2)^2-z^3*w}--codim 1 and irreducible (GED,UED)=(16,8)--This has the multiplicity Max was looking for.
+F={(x^2+y^2+z^2+w^2)-2*y^2}--codim 1 and irreducible (GED,UED)=(6,4)
+
+--bertiniPosDimSolve F--used this to check irreducibility over CC
+determinantalGenericEuclideanDistanceDegree(F)
+determinantalUnitEuclideanDistanceDegree(F)
+leftKernelGenericEDDegree(theDir,1,F)
+runBertiniEDDegree(theDir)
+leftKernelUnitEDDegree(theDir,1,F)
+runBertiniEDDegree(theDir)
+
+fZ=first primaryDecomposition ideal singularLocus ideal F
+--2*2
+
+pDecZ=primaryDecomposition ideal singularLocus (ideal F+ideal(gens R/(i->i^2)//sum))
+
+codim\ pDecZ
+degree\ pDecZ
+degree\radical \pDecZ
+(pDecZ//first//radical)_*//determinantalGenericEuclideanDistanceDegree
+Z=(pDecZ//first//radical)_*
+
+fZ
+(ideal Z+fZ)//primaryDecomposition
+
+leftKernelGenericEDDegree(theDir,2,Z)
+runBertiniEDDegree(theDir)
+
+----
+U=((ideal F)*(ideal(gens R/(i->i^2)//sum)))
+pDecZU=primaryDecomposition ideal singularLocus U
+pDecZU/radical//first
+
+primaryDecomposition(ideal F+radical first primaryDecomposition first pDecZU)
+
+
+
+

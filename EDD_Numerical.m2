@@ -43,7 +43,7 @@ bertiniKeys={    "BertiniStartFiberSolveConfiguration","BertiniMembershipTestCon
 coordinateKeys={    "PrimalCoordinates",    "HomogeneousVariableGroups",    "AffineVariableGroups"    }
 directoryKeys={"Directory"} 
 solutionKeys={"TrackSolutions"}
-outputKeys={"OutputKeys"}
+outputKeys={"OutputType"}
 
 fixValues={"FixedData","FixedWeight","FixedSubmodel","FixedJacobianSubmodel"}
 nocKeys=parameterKeys|jacKeys|modelKeys|degreeKeys|bertiniKeys|coordinateKeys|directoryKeys|solutionKeys|fixValues|outputKeys
@@ -87,7 +87,7 @@ newNumericalComputationOptions(String,Sequence):=(theDir,P)->(
     NCO#"Infinity"=null;
     NCO#"PairGeneralHyperplaneList"=null;
     NCO#"IsProjective"=false;
-    NCO#"OutputType"="Standard"
+    NCO#"OutputType"="Standard";
     return NCO
     )
 
@@ -461,7 +461,8 @@ homotopyEDDegree(NumericalComputationOptions,String,Boolean,Boolean):=(NCO,ht,is
 	(nsf,nc):=("filterFile",#flatten {bLagrangeVars,bModelVars});
     	print("Filter",kp,"num kp",#kp,"num sols",ns,"num coordinates",nc,bin);
 	filterSolutionFunction("filterFile",kp,ns,nc);
-    	moveB'File(NCO#"Directory","filterFile","member_points",CopyB'File=>true);
+    	if stage===stageOne or NCO#"OutputType"=!="TestHomotopyConjectureGEDvUED"
+	then moveB'File(NCO#"Directory","filterFile","member_points",CopyB'File=>true);
 	return #kp
 	);
     stageEDDegBound:=new MutableList from {"empty",null,null};   
