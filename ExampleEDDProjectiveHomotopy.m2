@@ -186,17 +186,66 @@ o90 = |{.212546-.322432*ii, -.406238-.267792*ii, .267792-.406238*ii, -.322432-.2
 ---
 --
 restart
+loadPackage"Bertini"
 T=QQ[I]/ideal(I^2+1)[x1,x2,x3,x4]
 xList= drop(gens T,-1)
 xList=gens T
 Q=sum apply(xList,i->i^2)
 jj=I
+f=(x1-jj*x4)^2+2*(x3-jj*x2)^2+Q--*(3*x1+5*x2-7*x3+2*x4)  (6,1)
 f=(x1-jj*x4)^3+2*(x3-jj*x2)^3+Q*(3*x1+5*x2-7*x3+2*x4)
+loadPackage"EuclideanDistanceDegree"
+determinantalGenericEuclideanDistanceDegree {f}  
+determinantalUnitEuclideanDistanceDegree {f}
+
+bertiniPosDimSolve apply({x1,x2,x3,x4},i-> diff(i,f))
+bertiniPosDimSolve {f}
+
+radical ideal singularLocus ideal f
 F={f}
+A=  ideal singularLocus  ideal {f %Q,Q};
+bertiniPosDimSolve(A_*)--one line
+2*2==degree A---degree 4--one line with multiplicity 2
+B=   ideal {f %Q,Q};
+bertiniPosDimSolve(B_*)--4 lines. one with multiplicity 3.
+degree B==2*(1+1+1+3)
+
+C= first decompose radical ideal singularLocus  ideal {f %Q,Q}--L4=Z---one line. 
+--ideal (x2 + I*x3, x1 - I*x4)
+threeLines = saturate(B,C)
+degree threeLines ==2*(1+1+1)
+D=threeLines+C--three reduced points
+degree D==2*(1+1+1)
+(threeLines+C)== radical (threeLines+C)
+decompose D
+decompose sub(D,{x4=>-I,x1=>1,x3=>I*x2})
+(-I:1:x2:I*x2)
+x2^3=2*\jj
+
+
+
+pDec=primaryDecomposition ideal {f %Q,Q}
+degree\pDec
+degree\radical \pDec
+loadPackage"Bertini"
+bertiniPosDimSolve((radical first pDec)_*)
+
+peek oo
+radical A==
+decompose A
+codim\primaryDecomposition 
+
+ideal mingens 
+decompose    ideal {f %Q,Q}
+
 loadPackage"EuclideanDistanceDegree"
 help leftKernelUnitEDDegree
 leftKernelUnitEDDegree(storeBM2Files,1,F)--UED degree is 6
 leftKernelGenericEDDegree(storeBM2Files,1,F)--GED degree is 18
+leftKernelUnitEDDegree(storeBM2Files,2,F|{Q})
+determinantalGenericEuclideanDistanceDegree  (F|{Q})
+
+help EuclideanDistanceDegree
 runBertini(storeBM2Files)
 readFile(storeBM2Files)
 --determinantalUnitEuclideanDistanceDegree F
@@ -267,3 +316,45 @@ apply(elevenPoints,i->SVD clean(1e-10,matrix{{i_0,i_1,i_2},{i_3,i_4,i_5}}))
 apply(elevenPoints,i->sum apply({i_0,i_1,i_2,i_3,i_4,i_5},j->j^2))
 netList oo
 #twentyFourPoints
+
+R=QQ
+
+
+
+restart
+--Quadric example. 
+--loadPackage"Bertini"
+loadPackage"EuclideanDistanceDegree"
+kk=QQ[I]/ideal(I^2+1)
+T=kk[x0,x1,x2,x3]
+Q=x0^2+x1^2+x2^2+x3^2
+f=(x1-I*x0)^2+2*(x3-I*x2)^2+Q--*(3*x1+5*x2-7*x3+2*x4)  (6,1)
+--Symbolic computation
+EDDefect=1/(degree kk)*(determinantalGenericEuclideanDistanceDegree {f}-determinantalUnitEuclideanDistanceDegree {f})  
+--Create directory, write files, run computation.
+dir1=temporaryFileName(); mkdir dir1;dir2=temporaryFileName(); mkdir dir2;
+leftKernelGenericEDDegree(dir1,codim ideal {f},{f})
+leftKernelUnitEDDegree(dir2,codim ideal {f},{f})
+EDDefect=runBertiniEDDegree(dir1)-runBertiniEDDegree(dir2)
+
+examples EuclideanDistanceDegree
+
+jj=I
+f=(x1-jj*x4)^2+2*(x3-jj*x2)^2+Q--*(3*x1+5*x2-7*x3+2*x4)  (6,1)
+f=(x1-jj*x4)^3+2*(x3-jj*x2)^3+Q*(3*x1+5*x2-7*x3+2*x4)
+loadPackage"EuclideanDistanceDegree"
+determinantalGenericEuclideanDistanceDegree {f}  
+determinantalUnitEuclideanDistanceDegree {f}
+
+bertiniPosDimSolve apply({x1,x2,x3,x4},i-> diff(i,f))
+bertiniPosDimSolve {f}
+
+radical ideal singularLocus ideal f
+F={f}
+A=  ideal singularLocus  ideal {f %Q,Q};
+bertiniPosDimSolve(A_*)--one line
+2*2==degree A---degree 4--one line with multiplicity 2
+B=   ideal {f %Q,Q};
+bertiniPosDimSolve(B_*)--4 lines. one with multiplicity 3.
+degree B==2*(1+1+1+3)
+

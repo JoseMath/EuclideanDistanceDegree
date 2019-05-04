@@ -43,7 +43,7 @@ bertiniKeys={    "BertiniStartFiberSolveConfiguration","BertiniMembershipTestCon
 coordinateKeys={    "PrimalCoordinates",    "HomogeneousVariableGroups",    "AffineVariableGroups"    }
 directoryKeys={"Directory"} 
 solutionKeys={"TrackSolutions"}
-outputKeys={"OutputType"}
+outputKeys={"OutputType","FinerRestriction"}
 
 fixValues={"FixedData","FixedWeight","FixedSubmodel","FixedJacobianSubmodel"}
 nocKeys=parameterKeys|jacKeys|modelKeys|degreeKeys|bertiniKeys|coordinateKeys|directoryKeys|solutionKeys|fixValues|outputKeys
@@ -88,6 +88,7 @@ newNumericalComputationOptions(String,Sequence):=(theDir,P)->(
     NCO#"PairGeneralHyperplaneList"=null;
     NCO#"IsProjective"=false;
     NCO#"OutputType"="Standard";
+    NCO#"FinerRestriction"={};
     return NCO
     )
 
@@ -341,8 +342,7 @@ homotopyEDDegree(NumericalComputationOptions,String,Boolean,Boolean):=(NCO,ht,is
 -- (CODE 8)  Set up inputs for bertini. 
     bModelVars:=gens ring first F|{"HX"}   ;
     bPoly:=homogLG|flatten entries symbolicSystem;
-    bConfiguration:={"UseRegeneration"=>1,
-	"TrackType"=>0,
+    bConfiguration:={"TrackType"=>0,
 	"PrintPathProgress"=>1000}|(NCO#"BertiniStartFiberSolveConfiguration");    
     BF:=pairData|pairWeight|pairJac|pairGradient|pairGeneralHyperplanes|pairScale;
 -- (FUNCTIONS 2) Functions for solving (write input)
@@ -352,6 +352,8 @@ homotopyEDDegree(NumericalComputationOptions,String,Boolean,Boolean):=(NCO,ht,is
 	then (BC={};
 	    if dataHomotopy then PG={"TData"}
 	    else if weightHomotopy then PG={"TWeight"});
+    	if stage===stageOne then bConfiguration=bConfiguration|{"UseRegeneration"=>1};
+    	if stage===stageTwo then bConfiguration=bConfiguration|{"UseRegeneration"=>0};
     	makeB'InputFile(NCO#"Directory",
     	    NameB'InputFile=>nif,
 	    HomVariableGroup=>{bLagrangeVars,bModelVars},
@@ -372,12 +374,15 @@ homotopyEDDegree(NumericalComputationOptions,String,Boolean,Boolean):=(NCO,ht,is
 	runBertini(NCO#"Directory",NameB'InputFile=>nif);
     	readFile(NCO#"Directory");
     	if stage==stageOne then(	
+	    moveB'File(NCO#"Directory","bertini_session.log","stageOne_log",CopyB'File=>true);
 	    moveB'File(NCO#"Directory","nonsingular_solutions","stageOne_solutions",CopyB'File=>true);
 	    moveB'File(NCO#"Directory","nonsingular_solutions","start",CopyB'File=>true);
 	    moveB'File(NCO#"Directory","nonsingular_solutions","member_points",CopyB'File=>true);
 	    moveB'File(NCO#"Directory","nonsingular_solutions",criticalPointName,CopyB'File=>true));
     	if stage==stageTwo then(
+	    moveB'File(NCO#"Directory","bertini_session.log","stageTwo_log",CopyB'File=>true);
 	    moveB'File(NCO#"Directory","nonsingular_solutions","stageTwo_solutions",CopyB'File=>true);
+	    moveB'File(NCO#"Directory","main_data","stageTwo_main_data",CopyB'File=>true);
 	    --moveB'File(NCO#"Directory","nonsingular_solutions","start",CopyB'File=>true);
 	    moveB'File(NCO#"Directory","nonsingular_solutions","member_points",CopyB'File=>true);
 	    moveB'File(NCO#"Directory","nonsingular_solutions",criticalPointName,CopyB'File=>true));	    
@@ -461,38 +466,44 @@ homotopyEDDegree(NumericalComputationOptions,String,Boolean,Boolean):=(NCO,ht,is
 	(nsf,nc):=("filterFile",#flatten {bLagrangeVars,bModelVars});
     	print("Filter",kp,"num kp",#kp,"num sols",ns,"num coordinates",nc,bin);
 	filterSolutionFunction("filterFile",kp,ns,nc);
-    	if stage===stageOne or NCO#"OutputType"=!="TestHomotopyConjectureGEDvUED"
-	then moveB'File(NCO#"Directory","filterFile","member_points",CopyB'File=>true);
+    	moveB'File(NCO#"Directory","filterFile","member_points",CopyB'File=>true);
 	return #kp
 	);
-    stageEDDegBound:=new MutableList from {"empty",null,null};   
+    stageEDDegBound:=new MutableList from {"GEDvUED",null,null};   
 -- (FUNCTIONS 5) Functions to iterate filtering
     runSaturateUnionFunction:=(polyList,stage)->(
+    	print("Remove critical points from member_points where any of these polynomials vanish",polyList);
     	(case,bin):=("SaturateH","typeA");
     	scan(#polyList,i->(
 		stageEDDegBound#stage=positionFilterFunction(stageOne,case,i,polyList_i,bin);
-	    	print(peek stageEDDegBound,case,bin,polyList_i)));	 
+	    	print(peek stageEDDegBound,"Saturate by polynomial"=>polyList_i)));	 
     	print(peek stageEDDegBound));	        
 -- (FUNCTIONS 6) Functions to restrict to the variety 
     runRestrictIntersectionFunction:=(polyList,stage)->(
+    	print("Only keeping critical points from member_points where every one of these polynomials vanish",polyList);
     	(case,bin):=("IntersectF","typeB");
     	scan(#polyList,i->(
-		print(peek stageEDDegBound,case,bin,polyList_i);
-		stageEDDegBound#stage=positionFilterFunction(stageOne,case,i,polyList_i,bin)));	 
+		stageEDDegBound#stage=positionFilterFunction(stageOne,case,i,polyList_i,bin);
+		print(peek stageEDDegBound,"Vanish polynomial"=>polyList_i)));	 
     	print(peek stageEDDegBound));	        
 -- (Function 7) 
     runComputationStage:=(stage,offPolyList,onPolyList)->(
 	if stage==stageOne then
 	runSolveInputFunction(stageOne,"input_first_solve") else 
 	runSolveInputFunction(stageTwo,"input_second_solve");
-	print("offPolyList",offPolyList);
-	runSaturateUnionFunction(offPolyList,stage);
-    	print("WIN","SATURATE");
+--	print("offPolyList",offPolyList);
+	if stage===stageOne or NCO#"OutputType"=!="TestHomotopyConjectureGEDvUED"
+	then runSaturateUnionFunction(offPolyList,stage);
+--    	print("WIN","SATURATE");
 --    	moveB'File(NCO#"Directory","member_points","filterFile",CopyB'File=>true);
 --	print("onPolyList",onPolyList);
 	runRestrictIntersectionFunction(onPolyList,stage);
-	print("WIN","RESTRICT");
-	print("WIN",stage)	);    
+--	print("WIN","RESTRICT");
+    	if stage===stageTwo and NCO#"FinerRestriction"=!={} 
+	then(
+	    print("In stage 2, keep the critical points where each of these polynomials vanish ",NCO#"FinerRestriction");
+	    	runRestrictIntersectionFunction(NCO#"FinerRestriction",stage));
+	print("We have completed stage ",stage)	);    
     offPolyList:={HX,"L0"}|((pairGeneralHyperplanes/(i->i#NameB'Section)));
     onPolyList :=F/(i->homogenize(sub(i,jacRing),HX));
     if isStageOne then runComputationStage(stageOne,offPolyList,onPolyList);
@@ -501,8 +512,36 @@ homotopyEDDegree(NumericalComputationOptions,String,Boolean,Boolean):=(NCO,ht,is
       )
 
 
+vanishTally=method() 
+vanishTally(NumericalComputationOptions,Ideal,RR):=(NCO,Z,setTolerance)->(
+    limitPoints:=importMainDataFile(NCO#"Directory",NameMainDataFile=>"stageTwo_main_data");
+    (F,G):=(NCO#"Model",NCO#"WitnessModel");    
+    S:=CC[gens ring first F];
+    return tally apply(#limitPoints,s->(	    
+	p:=limitPoints#s;
+	X:=drop(drop(p#Coordinates,#G+1),-1);
+	--print X;
+	xSub:=apply(gens S,X,(i,j)->i=>j);
+	if 1e-8>norm sub(sub(gens Z,S),xSub) then {p#PathNumber}|p#PathsWithSameEndpoint else null )
+    ))
+vanishTally(NumericalComputationOptions,Ideal):=(NCO,Z)->(setTolerance:=1e-8,return vanishTally(NCO,Z,setTolerance))
+vanishTally(NumericalComputationOptions,List,RR):=(NCO,fegZ,setTolerance)->vanishTally(NCO,ideal fegZ,setTolerance)
+vanishTally(NumericalComputationOptions,List):=(NCO,fegZ)->vanishTally(NCO,ideal fegZ)
 
 
+-*
+loadPackage("EuclideanDistanceDegree",Reload=>true)
+    	dir=storeBM2Files
+       R=QQ[x1,x2,x3,x4,x5,x6]
+       F=(minors(2,genericMatrix(R,3,2)))_*;
+       G=drop(F,-1);
+       #G==codim ideal F;
+       P=(F,G)
+       NCO=newNumericalComputationOptions(dir,P)
+       NCO#"TargetWeight"=apply(#gens R,i->1)
+       2==homotopyEDDegree(NCO,"Weight",true,true)
+       vanishTally(NCO,F)
+*-
 
 numericWeightEDDegree=method()
 

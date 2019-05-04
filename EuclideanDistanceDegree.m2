@@ -11,8 +11,8 @@ newPackage(
     Headline => "Produces equations and computes ED degrees. ",
     DebuggingMode => true,
     AuxiliaryFiles => false,
-    PackageImports => {"SimpleDoc","Bertini"},
-    PackageExports => {"SimpleDoc","Bertini"},
+    PackageImports => {"SimpleDoc","Bertini","NumericalAlgebraicGeometry"},
+    PackageExports => {"SimpleDoc","Bertini","NumericalAlgebraicGeometry"},
   Configuration => { "RandomCoefficients"=>CC,
       "Continuation"=>Bertini },
   CacheExampleOutput => false
@@ -21,6 +21,7 @@ newPackage(
 
 --path=prepend("/Users/jo/Documents/GoodGit/EuclideanDistanceDegree",path)
 --loadPackage("EuclideanDistanceDegree",Reload=>true)
+--restart
 
 randomCC=()->random CC
 randCC=()->random CC
@@ -36,6 +37,7 @@ load"EDD_Numerical.m2"
 
 
 export { 
+    "vanishTally",
     "ReturnCriticalIdeal",
     "experimentDualityDifference",
     "homotopyEDDegree",
@@ -194,6 +196,7 @@ runBertiniEDDegree(storeBM2Files)
 
 
 ----
+restart
 loadPackage"EuclideanDistanceDegree"
 R=QQ[x,y,z,w]
 F={det genericMatrix(R,2,2),y-z}

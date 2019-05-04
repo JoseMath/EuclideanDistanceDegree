@@ -89,14 +89,115 @@ doc /// --EuclideanDistanceDegree
     	NCO#"TargetWeight"={0}|(apply(-1+#gens R,i->1))
 	homotopyEDDegree(NCO,"Data",false,true)
 	importSolutionsFile(NCO#"Directory",NameSolutionsFile=>"member_points")	
+      Text
+      	A current project (2019) is quantify the difference between the GED and UED in terms of topology. We gain understanding by seeing where all of the endpoints of the weight-homotopy go. 
+      Example
+    	dir=temporaryFileName();if not fileExists dir then mkdir dir;
+    	zdir=temporaryFileName();if not fileExists zdir then mkdir zdir;
+        R=QQ[x1,x2,x3,x4]
+	F=(minors(2,genericMatrix(R,2,2)))_*;
+    	P=(F,F)
+    	Q=gens R/(i->i^2)//sum
+	Z= radical ideal singularLocus (ideal(F)+ideal Q)
+    	codimZ=codim\decompose radical Z
+    	max codimZ==min codimZ--pure dimensional
+    	GZ=ideal {};scan(Z_*,f->if numgens GZ+1==codim (GZ+ideal(f))then GZ=ideal(f)+GZ)
+    	codim GZ==first codimZ
+--6=2+4
+    	6==determinantalGenericEuclideanDistanceDegree F
+    	2==determinantalUnitEuclideanDistanceDegree F
+    	4==determinantalGenericEuclideanDistanceDegree flatten entries gens Z       
+--
+	NCO=newNumericalComputationOptions(dir,P)
+    	2==homotopyEDDegree(NCO,"Weight",true,true)
+    	NCO#"OutputType"="TestHomotopyConjectureGEDvUED"
+	6==homotopyEDDegree(NCO,"Weight",true,true)
+    	NCO#"OutputType"="TestHomotopyConjectureGEDvUED"
+    	NCO#"FinerRestriction"=flatten entries gens GZ
+	4==homotopyEDDegree(NCO,"Weight",true,true)
+	readFile(NCO#"Directory","member_points",10000)
+	decompose Z
+      Text
+      	This test is for a variety where Z has multiplicity.
+      Example
+        R=QQ[x,y,z,w]
+	F=G={(x^2+y^2+z^2+w^2)*x-w^3};
+    	P=(F,F)
+    	Q=gens R/(i->i^2)//sum
+	singF=radical ideal singularLocus ideal F
+	mZ=  ideal singularLocus (ideal(F)+ideal Q)
+    	Z=radical mZ
+    	print ("Multiplicity of Z"=>degree mZ/degree Z)
+--15=4+5+2*4=UED(X)+GED(X_sing)+2*GED(Z)
+    	15==determinantalGenericEuclideanDistanceDegree F
+    	5==determinantalUnitEuclideanDistanceDegree F
+    	4==determinantalGenericEuclideanDistanceDegree flatten entries gens Z;       
+--
+    	dir=temporaryFileName();if not fileExists dir then mkdir dir;
+	NCO=newNumericalComputationOptions(dir,P)
+    	5==homotopyEDDegree(NCO,"Weight",true,true)
+	--Now we investigate where the other 15-5 solutions went. 
+	readFile(NCO#"Directory","stageTwo_log",10000)
+    	--The stage_Two_log file gives us some insights. 
+	--The solutions partition by nonsing vs sing as {5}+{6}=11
+	--The solutions partition by multiplicity as (1)*7+(2)*4=15
+    	--Conclusion: {5}+{(1)*2+(2)*4}={15}
+--    	readFile(NCO#"Directory","stageTwo_main_data",100000)    	
+    	limitPoints=importMainDataFile(NCO#"Directory",NameMainDataFile=>"stageTwo_main_data");
+    	#limitPoints==11
+    	peek limitPoints#2	
+    	vanishTally(NCO,singF)--two points
+--    	2==#delete(null,keys vanishTally(NCO,singF))
+    	vanishTally(NCO,Z)--six points
+--    	6==#delete(null,keys vanishTally(NCO,Z))
+      Text
+      	This tests a variety with a positive dimensional Z. 
+      Example
+        R=QQ[x,y,z,w]
+    	Q=gens R/(i->i^2)//sum
+	G=F={(x^2+y^2+z^2+w^2)^2-z^3*w}
+    	P=(F,G)
+	mZ=  ideal singularLocus (ideal(F)+ideal Q)
+	Z= radical mZ	
+    	(degree mZ=>degree Z)	
+	singX=radical ideal singularLocus ideal F
+--16=GED(X)=UED(X)+2*GED(Z)
+    	16==determinantalGenericEuclideanDistanceDegree F
+    	8==determinantalUnitEuclideanDistanceDegree F
+    	4==determinantalGenericEuclideanDistanceDegree flatten entries gens Z    
+--
+    	dir=temporaryFileName();if not fileExists dir then mkdir dir;
+	NCO=newNumericalComputationOptions(dir,P)
+    	8==homotopyEDDegree(NCO,"Weight",true,true)
+	--Now we investigate where the other 16-8 solutions went. 
+	readFile(NCO#"Directory","stageTwo_log",10000)
+    	---We see that there were failures so we rerun with stageOne set to false
+    	8==homotopyEDDegree(NCO,"Weight",false,true)
+	readFile(NCO#"Directory","stageTwo_log",10000)
+    	--The stage_Two_log file gives us some insights. 
+	--The solutions partition by nonsing vs sing as {8}+{4}=12
+	--The solutions partition by multiplicity as (1)*10+(2)*2=14
+    	--We are short two failures. 
+    	--Conclusion: {8}+{(1)*2+(2)*2}+{2}=={16}
+--    	readFile(NCO#"Directory","stageTwo_main_data",100000)    	
+    	limitPoints=importMainDataFile(NCO#"Directory",NameMainDataFile=>"stageTwo_main_data");
+    	#limitPoints==13
+    	peek limitPoints#2	
+    	vanishTally(NCO,Z)--2+2*2
+    	vanishTally(NCO,singX)--2+2*2
+	2==#delete(null,keys vanishTally(NCO,singF))
+    	vanishTally(NCO,Z)--six points
+--    	6==#delete(null,keys vanishTally(NCO,Z))
+    	    	
 ///;
 
 
 end
 
 restart
+loadPackage"EuclideanDistanceDegree"
 installPackage"EuclideanDistanceDegree"
-
+check "EuclideanDistanceDegree"
 dualVariety=(F,codF)->(
     R1:=ring first F;
     R2:=QQ[apply(#gens R1,i->"y"|i)];
@@ -200,7 +301,10 @@ loadPackage("EuclideanDistanceDegree",Reload=>true)
 
 
 restart
+installPackage"EuclideanDistanceDegree"
+check EuclideanDistanceDegree
 loadPackage"EuclideanDistanceDegree"
+
 NCO#"StartWeight"=apply(#gens ring first F,i->1)
 startEDDegree(NCO,(0,0,0),1)
 runBertiniStartEDDegree(storeBM2Files,#F,NCO)
