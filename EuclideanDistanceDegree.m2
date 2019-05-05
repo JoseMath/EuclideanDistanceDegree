@@ -1977,3 +1977,22 @@ runBertiniProjectiveEDDegree(theDir)
 
 
 
+
+ loadPackage"EuclideanDistanceDegree"
+ kk=QQ[I]/ideal(I^2+1);
+ T=kk[x0,x1,x2,x3];
+ q=x0^2+x1^2+x2^2+x3^2;
+ F={(x1-I*x0)^2+2*(x3-I*x2)^2+q};
+ --Symbolic computation (Grobner bases method):
+ EDDefect=(determinantalGenericEuclideanDistanceDegree F-
+  determinantalUnitEuclideanDistanceDegree F)/(degree kk) 
+ --Numerical computation (Continuation method): 
+ --  (i7-i8) Create temporary directories 
+ --  (i9-i10) Write Bertini input files 
+ --  (i11) Run Bertini and computes EDdefect(V(f))
+ (dir1,dir2)=(temporaryFileName(),temporaryFileName()); 
+ {dir1,dir2}/mkdir; 
+ leftKernelGenericEDDegree(dir1,F)
+ leftKernelUnitEDDegree(dir2,F)
+ EDDefect=runBertiniEDDegree(dir1)-runBertiniEDDegree(dir2)
+o11 = 5
