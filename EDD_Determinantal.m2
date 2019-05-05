@@ -3,8 +3,8 @@ rand:=randomZZ--This is the function used to compute random numbers.
 --random(QQ) is not a good choice in practice.
 --This function computes weighted ED degrees
 --makeJac:=(F,x)->apply(F,f->apply(x,j->diff(j,f)))
-symbolicWeightEDDegree=method(Options=>{
-	ReturnCriticalIdeal=>false		})
+symbolicOptions={ReturnCriticalIdeal=>false		}
+symbolicWeightEDDegree=method(Options=>symbolicOptions)
 symbolicWeightEDDegree(List,List,List):= o-> (F,data,weight)->(
     xList:=gens ring first F;
     numX:=#xList;
@@ -17,16 +17,16 @@ symbolicWeightEDDegree(List,List,List):= o-> (F,data,weight)->(
     unitQ:=sum apply(xList,i->i^2);
     sl:=radical ideal singularLocus I;
     win=saturate(win,sl);
---    if o.ReturnCriticalIdeal then return win else return degree win
-    return degree win
+    if o.ReturnCriticalIdeal then return win else return degree win
+--    return degree win
     )
 
-determinantalUnitEuclideanDistanceDegree=method(Options=>{		})
+determinantalUnitEuclideanDistanceDegree=method(Options=>symbolicOptions)
 determinantalUnitEuclideanDistanceDegree(List):= o-> (F)->symbolicWeightEDDegree(F,
     apply(#gens ring first F,i->rand()),
     apply(#gens ring first F,i->1_(ring first F)))
 
-determinantalGenericEuclideanDistanceDegree=method(Options=>{		})
+determinantalGenericEuclideanDistanceDegree=method(Options=>symbolicOptions)
 determinantalGenericEuclideanDistanceDegree(List):= o-> (F)->symbolicWeightEDDegree(F,apply(#gens ring first F,i->rand()),apply(#gens ring first F,i->rand()))
 
 
