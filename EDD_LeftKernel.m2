@@ -1,11 +1,6 @@
 --restart
-needsPackage"Bertini"
-
-
---rand:=()->random(CC)
---makeJac:=(F,x)->apply(F,f->apply(x,j->diff(j,f)))
 leftKernelWeightEDDegree=method(Options=>{		})
-leftKernelWeightEDDegree(String,ZZ,List,List):= o->(theDir,cod,F,weight)->(
+leftKernelWeightEDDegree(String,List,List):= o->(theDir,F,weight)->(
     theR:=ring first F;
     numX:=#gens theR;
     data:=apply(numX,i->randCC());
@@ -21,7 +16,7 @@ leftKernelWeightEDDegree(String,ZZ,List,List):= o->(theDir,cod,F,weight)->(
     topRow:=apply(#weight,i->2*wList_i*(xList_i-uList_i));
     M:=matrix{topRow}||jac;
     critEq:=flatten entries((matrix{lamList}*sub(M,S)));
-    restrictLam:=apply(#lamList-1-cod,i->makeB'Section(drop(lamList,1)));
+    restrictLam:=apply(#lamList-1-#F,i->makeB'Section(drop(lamList,1)));
     win:=restrictLam|F|critEq;
     theConstants:=(transpose{uList,data})|(transpose{wList,weight});
     unitQ:=sum apply(xList,i->i^2);
@@ -33,13 +28,14 @@ leftKernelWeightEDDegree(String,ZZ,List,List):= o->(theDir,cod,F,weight)->(
 	B'Configs=>{"UseRegeneration"=>1,"TrackType"=>0,"PrintPathProgress"=>1000},
 	B'Polynomials=>win,
 	B'Constants=>theConstants
-	)  )  
+	);
+    return theDir  )  
 
 leftKernelUnitEDDegree=method(Options=>{		})
-leftKernelUnitEDDegree(String,ZZ,List):= o->(theDir,cod,F)->leftKernelWeightEDDegree(theDir,    cod,    F,    apply(#gens ring first F,i->1_(ring first F)))
+leftKernelUnitEDDegree(String,List):= o->(theDir,F)->leftKernelWeightEDDegree(theDir,    F,    apply(#gens ring first F,i->1_(ring first F)))
 
 leftKernelGenericEDDegree=method(Options=>{		})
-leftKernelGenericEDDegree(String,ZZ,List):= o->(theDir,cod,F)->leftKernelWeightEDDegree(theDir,    cod,    F,    apply(#gens ring first F,i->randCC()))
+leftKernelGenericEDDegree(String,List):= o->(theDir,F)->leftKernelWeightEDDegree(theDir,      F,    apply(#gens ring first F,i->randCC()))
 
 
 runBertiniEDDegree=method(Options=>{		})

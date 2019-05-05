@@ -112,7 +112,7 @@ doc /// --EuclideanDistanceDegree
       Example
     	R=QQ[x,y];
 	F={x^2+y^2-1};	c=1;
-    	leftKernelUnitEDDegree(storeBM2Files,c,F)
+    	leftKernelUnitEDDegree(storeBM2Files,F)
 	2==runBertiniEDDegree(storeBM2Files)
       Text
       	This package also computes generic ED degrees. The generic ED degree of X is always greater than or equal to the unit ED degree X.
@@ -120,7 +120,7 @@ doc /// --EuclideanDistanceDegree
     	R=QQ[x,y];
 	F={x^2+y^2-1};	c=1
     	4==determinantalGenericEuclideanDistanceDegree(F)
-    	leftKernelGenericEDDegree(storeBM2Files,c,F)
+    	leftKernelGenericEDDegree(storeBM2Files,F)
 	4==runBertiniEDDegree(storeBM2Files)
       Text
       	The most general method for computing ED degrees with symbolic computation is symbolicWeightEDDegree
@@ -201,13 +201,13 @@ doc ///--symbolicWeightEDDegree
  Usage
    UED = determinantalUnitEuclideanDistanceDegree(F)
    GED = determinantalGenericEuclideanDistanceDegree(F)
-   GED = symbolicWeightEDDegree(F,u,w)
+   GED = symbolicWeightEDDegree(F,U,W)
  Inputs
    F:List
      polynomials (system need not be square)
-   u:List
+   U:List
      a (generic) data vector 
-   w:List
+   W:List
      a (generic) weight vector
  Outputs
    GED:ZZ
@@ -222,10 +222,10 @@ doc ///--symbolicWeightEDDegree
    Example
      R = QQ[x,y];     
      F={x^2+y^2-1}
-     (u,w)=({12,23},{15,331})
+     (U,W)=({12,23},{15,331})
      UED = determinantalUnitEuclideanDistanceDegree F 
      GED = determinantalGenericEuclideanDistanceDegree F 
-     ICP = symbolicWeightEDDegree(F,u,w,ReturnCriticalIdeal=>true)
+     ICP = symbolicWeightEDDegree(F,U,W,ReturnCriticalIdeal=>true)
  Caveat
    none
       
@@ -236,48 +236,98 @@ doc ///--symbolicWeightEDDegree
 doc ///--leftKernel
  Key
    leftKernelWeightEDDegree
-   (leftKernelWeightEDDegree,String,ZZ,List,List)
+   (leftKernelWeightEDDegree,String,List,List)
    leftKernelUnitEDDegree
-   (leftKernelUnitEDDegree,String,ZZ,List)
+   (leftKernelUnitEDDegree,String,List)
    leftKernelGenericEDDegree
-   (leftKernelGenericEDDegree,String,ZZ,List)
+   (leftKernelGenericEDDegree,String,List)
    runBertiniEDDegree
    (runBertiniEDDegree,String)
  Headline
-   a method to determine Euclidean distance degrees using symbolic computation
+   a method to determine Euclidean distance degrees of affine varieties that are complete intersections using numerical computation
  Usage
-   UED = determinantalUnitEuclideanDistanceDegree(F)
-   GED = determinantalGenericEuclideanDistanceDegree(F)
-   GED = symbolicWeightEDDegree(F,u,w)
+   GED = runBertiniEDDegree leftKernelWeightEDDegree(dir,c,F,W)
+   GED = runBertiniEDDegree leftKernelGenericEDDegree(dir,c,F)
+   UED = runBertiniEDDegree leftKernelUnitEDDegree(dir,c,F)
  Inputs
    F:List
      polynomials (system need not be square)
-   u:List
-     a (generic) data vector 
-   w:List
+   dir:String
+     a directory 
+   c:ZZ
+     a codimension
+   W:List
      a (generic) weight vector
  Outputs
    GED:ZZ
      a generic Euclidean distance degree 
    UED:ZZ
      a unit Euclidean distance degree 
-   ICP:Ideal
-     an ideal for the variety of critical points
  Description
    Text
-     The default is to return a degree (GED or UED) but the option ReturnCriticalIdeal=>true will change the option to ICP 
+     The Bertini input files are written in dir and then Bertini is ran.  
    Example
      R = QQ[x,y];     
-     F={x^2+y^2-1}
-     (u,w)=({12,23},{15,331})
-     UED = determinantalUnitEuclideanDistanceDegree F 
-     GED = determinantalGenericEuclideanDistanceDegree F 
-     ICP = symbolicWeightEDDegree(F,u,w,ReturnCriticalIdeal=>true)
+     F = {x^2+y^2-1}
+     W = {.15,.331}
+     dir=temporaryFileName(); mkdir dir;
+     GED = runBertiniEDDegree leftKernelWeightEDDegree(dir,F,W)
+     GED = runBertiniEDDegree leftKernelGenericEDDegree(dir,F)
+     UED = runBertiniEDDegree leftKernelUnitEDDegree(dir,F)
  Caveat
    none
       
 ///;
 
+
+
+
+
+doc ///--leftKernel
+ Key
+   leftKernelWeightEDDegree
+   (leftKernelWeightEDDegree,String,List,List)
+   leftKernelUnitEDDegree
+   (leftKernelUnitEDDegree,String,List)
+   leftKernelGenericEDDegree
+   (leftKernelGenericEDDegree,String,List)
+   runBertiniEDDegree
+   (runBertiniEDDegree,String)
+ Headline
+   a method to determine Euclidean distance degrees of affine varieties that are complete intersections using numerical computation
+ Usage
+   GED = runBertiniEDDegree leftKernelWeightEDDegree(dir,c,F,W)
+   GED = runBertiniEDDegree leftKernelGenericEDDegree(dir,c,F)
+   UED = runBertiniEDDegree leftKernelUnitEDDegree(dir,c,F)
+ Inputs
+   F:List
+     polynomials (system need not be square)
+   dir:String
+     a directory 
+   c:ZZ
+     a codimension
+   W:List
+     a (generic) weight vector
+ Outputs
+   GED:ZZ
+     a generic Euclidean distance degree 
+   UED:ZZ
+     a unit Euclidean distance degree 
+ Description
+   Text
+     The Bertini input files are written in dir and then Bertini is ran.  
+   Example
+     R = QQ[x,y];     
+     F = {x^2+y^2-1}
+     W = {.15,.331}
+     dir=temporaryFileName(); mkdir dir;
+     GED = runBertiniEDDegree leftKernelWeightEDDegree(dir,F,W)
+     GED = runBertiniEDDegree leftKernelGenericEDDegree(dir,F)
+     UED = runBertiniEDDegree leftKernelUnitEDDegree(dir,F)
+ Caveat
+   none
+      
+///;
 
 
 --##########################################################################--
