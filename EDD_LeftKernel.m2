@@ -50,17 +50,3 @@ runBertiniEDDegree(String):= o->(storeBM2Files)->(
 
 
 end
-R=CC[x,y,z]
-f=x*y^2-z^3
-writeLeftKernelProjectiveGenericEDDegree(theDir,{f})
-runBertiniProjectiveEDDegree(theDir)
-
-
-
-R=CC[x1,x2,x3,x4,x5,x6,x7,x8,x9]
-f=det genericMatrix(R,3,3)
-writeLeftKernelProjectiveGenericEDDegree(theDir,{f})--39
-runBertiniProjectiveEDDegree(theDir)
-
-writeLeftKernelProjectiveUnitEDDegree(theDir,{f})--3
-runBertiniProjectiveEDDegree(theDir)

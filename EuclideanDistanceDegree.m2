@@ -37,32 +37,20 @@ load"EDD_Numerical.m2"
 
 
 export { 
-    "vanishTally",
+--    "vanishTally", --Needs to be document if exported
     "ReturnCriticalIdeal",
---    "experimentDualityDifference",
     "homotopyEDDegree",
     "symbolicWeightEDDegree",
     "determinantalUnitEuclideanDistanceDegree",
     "determinantalGenericEuclideanDistanceDegree",
-    --
     "leftKernelWeightEDDegree",
     "leftKernelUnitEDDegree",
     "leftKernelGenericEDDegree",
     "runBertiniEDDegree",
     "newNumericalComputationOptions",
----
-    "stageWeightEDDegreeHomotopy",
-    "startEDDegree",
-    "runBertiniStartEDDegree",
     "NumericalComputationOptions",
---
-    "filterSolutionFile",
---Options
-    "Data","Weight","UseRegeneration","TargetSlice",
     "numericWeightEDDegree",
---    "numericUnitEDDegree",
-    "numericEDDegree",
-    "weightEDDegreeHomotopy"
+    "numericEDDegree"
             }
 
 ----------------------------------------------------------------------------------------------------------------
@@ -72,19 +60,15 @@ export {
 --##########################################################################--
 -- INTERNAL METHODS
 --##########################################################################--
-----------------------------------------
-parString=(aString)->("("|toString(aString)|")");
-addSlash=(aString)->(
+parString = (aString)->("("|toString(aString)|")");
+addSlash = (aString)->(
     if aString_-1===" " then error (aString|" cannot end with whitespace.");
     if aString_-1=!="/" then aString=aString|"/";
     return aString    )
-makeJac=(system,unknowns)->(--it is a list of lists of partial derivatives of a polynomial
+makeJac = (system,unknowns)->(--it is a list of lists of partial derivatives of a polynomial
          for i in system list for j in unknowns list  diff(j,i))
 checkZero=(aSol,eps)->if aSol/abs//min<eps then false else true
-sortPointFunction=(aSol)->(if not (apply(aSol,i->{realPart i,imaginaryPart i}/abs//max)//min<1e-8) then true else false	    );
-
-
-
+sortPointFunction = (aSol)->(if not (apply(aSol,i->{realPart i,imaginaryPart i}/abs//max)//min<1e-8) then true else false	    );
 
 --beginDocumentation()
 --load "./DOC_EDD.m2";
@@ -221,8 +205,8 @@ doc ///--symbolicWeightEDDegree
      The default is to return a degree (GED or UED) but the option ReturnCriticalIdeal=>true will change the option to ICP 
    Example
      R = QQ[x,y];     
-     F={x^2+y^2-1}
-     (U,W)=({12,23},{15,331})
+     F = {x^2+y^2-1}
+     (U,W) = ({12,23},{15,331})
      UED = determinantalUnitEuclideanDistanceDegree F 
      GED = determinantalGenericEuclideanDistanceDegree F 
      ICP = symbolicWeightEDDegree(F,U,W,ReturnCriticalIdeal=>true)
@@ -233,54 +217,65 @@ doc ///--symbolicWeightEDDegree
 
 
 
-doc ///--leftKernel
+doc ///--NumericalComputationOptions
  Key
-   leftKernelWeightEDDegree
-   (leftKernelWeightEDDegree,String,List,List)
-   leftKernelUnitEDDegree
-   (leftKernelUnitEDDegree,String,List)
-   leftKernelGenericEDDegree
-   (leftKernelGenericEDDegree,String,List)
-   runBertiniEDDegree
-   (runBertiniEDDegree,String)
+   NumericalComputationOptions
+   newNumericalComputationOptions
+   (newNumericalComputationOptions,String,Sequence)
+   homotopyEDDegree   
+   (homotopyEDDegree,NumericalComputationOptions,String,Boolean,Boolean)
+   numericWeightEDDegree
+   (numericWeightEDDegree,String,Sequence,List)
+   (numericWeightEDDegree,Sequence,List)
+   numericEDDegree
+   (numericEDDegree,Sequence,String)
  Headline
-   a method to determine Euclidean distance degrees of affine varieties that are complete intersections using numerical computation
+   a method to determine Euclidean distance degrees of projective varieties (affine cones) using numerical computation
  Usage
-   GED = runBertiniEDDegree leftKernelWeightEDDegree(dir,c,F,W)
-   GED = runBertiniEDDegree leftKernelGenericEDDegree(dir,c,F)
-   UED = runBertiniEDDegree leftKernelUnitEDDegree(dir,c,F)
+   GED = numericEDDegree((F,G),"Generic")
+   UED = numericEDDegree((F,G),"Unit")
+   NCO = newNumericalComputationOptions(dir,(F,G))
+   (NCO = newNumericalComputationOptions(dir,(F,G)); GED = homotopyEDDegree(NCO, "Weight", true, false))
+   (NCO = newNumericalComputationOptions(dir,(F,G)); UED = homotopyEDDegree(NCO, "Weight", true, true))
  Inputs
    F:List
-     polynomials (system need not be square)
+     polynomials 
+   G:List
+     polynomials (complete intersection) such that V(F) is an irreducible component of V(G).
    dir:String
      a directory 
-   c:ZZ
-     a codimension
-   W:List
-     a (generic) weight vector
+   NCO:NumericalComputationOptions
+     a MutableHashTable to keeps track of the options and configurations for the homotopy methods
  Outputs
    GED:ZZ
      a generic Euclidean distance degree 
    UED:ZZ
      a unit Euclidean distance degree 
+   NCO:NumericalComputationOptions
+     a MutableHashTable to keeps track of the options and configurations for the homotopy methods
+   WS:List
+     a (generic) start weight vector
  Description
    Text
      The Bertini input files are written in dir and then Bertini is ran.  
    Example
      R = QQ[x,y];     
-     F = {x^2+y^2-1}
-     W = {.15,.331}
+     F = G = {x^2+y^2-1}
+     W1 = {1,1}
+     WS = {.7,1.2}
      dir=temporaryFileName(); mkdir dir;
-     GED = runBertiniEDDegree leftKernelWeightEDDegree(dir,F,W)
-     GED = runBertiniEDDegree leftKernelGenericEDDegree(dir,F)
-     UED = runBertiniEDDegree leftKernelUnitEDDegree(dir,F)
+     GED = numericEDDegree((F,G),"Generic")
+     UED = numericEDDegree((F,G),"Unit")
+     NCO = newNumericalComputationOptions(dir,(F,G))
+     NCO#"TargetWeight"
+     GED = homotopyEDDegree(NCO, "Weight", true, false)
+     UED = homotopyEDDegree(NCO, "Weight", true, true)
+     GED = numericWeightEDDegree((F,G),WS)
+     UED = numericWeightEDDegree((F,G),W1)
  Caveat
    none
       
 ///;
-
-
-
 
 
 doc ///--leftKernel
@@ -1964,6 +1959,20 @@ onePoint
 
 
 
+R=CC[x,y,z]
+f=x*y^2-z^3
+writeLeftKernelProjectiveGenericEDDegree(theDir,{f})
+runBertiniProjectiveEDDegree(theDir)
+
+
+
+R=CC[x1,x2,x3,x4,x5,x6,x7,x8,x9]
+f=det genericMatrix(R,3,3)
+writeLeftKernelProjectiveGenericEDDegree(theDir,{f})--39
+runBertiniProjectiveEDDegree(theDir)
+
+writeLeftKernelProjectiveUnitEDDegree(theDir,{f})--3
+runBertiniProjectiveEDDegree(theDir)
 
 
 
