@@ -31,9 +31,9 @@ randomValue=(kk)-> if kk===CC then randomCC() else if kk===RR then randomRR() el
 randomVector=method(Options=>{		})
 randomVector(ZZ,Thing):= o->(n,R) ->apply(n,i->randomValue(R))--list of length n of randomValue
 
-load"EDD_Determinantal.m2"
-load"EDD_LeftKernel.m2"
-load"EDD_Numerical.m2"
+load"./EDD_Determinantal.m2"
+load"./EDD_LeftKernel.m2"
+load"./EDD_Numerical.m2"
 
 
 export { 
@@ -323,6 +323,7 @@ doc ///--leftKernel
    none
       
 ///;
+
 
 
 --##########################################################################--
