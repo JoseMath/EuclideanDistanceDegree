@@ -11,8 +11,8 @@ newPackage(
     Headline => "Produces equations and computes ED degrees. ",
     DebuggingMode => true,
     AuxiliaryFiles => false,
-    PackageImports => {"SimpleDoc","Bertini","NumericalAlgebraicGeometry"},
-    PackageExports => {"SimpleDoc","Bertini","NumericalAlgebraicGeometry"},
+    PackageImports => {"SimpleDoc","Bertini","NumericalAlgebraicGeometry","Elimination"},
+    PackageExports => {"SimpleDoc","Bertini","NumericalAlgebraicGeometry","Elimination"},
   Configuration => { "RandomCoefficients"=>CC,
       "Continuation"=>Bertini },
   CacheExampleOutput => false
@@ -1252,8 +1252,8 @@ runBertiniStartEDDegree(NumericalComputationOptions,Sequence,ZZ,ZZ):=(NCO,ht,sta
 
 
 
-
-
+F = {x*z^2-y^3}
+radical ideal singularLocus ideal F
 
 
 
