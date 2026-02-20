@@ -25,7 +25,7 @@ leftKernelWeightEDDegree(String,List,List):= o->(theDir,F,weight)->(
     makeB'InputFile(theDir,
 	AffVariableGroup=>{xList},
 	HomVariableGroup=>{lamList},
-	B'Configs=>{"UseRegeneration"=>1,"TrackType"=>0,"PrintPathProgress"=>1000},
+	BertiniInputConfiguration=>{"UseRegeneration"=>1,"TrackType"=>0,"PrintPathProgress"=>1000},
 	B'Polynomials=>win,
 	B'Constants=>theConstants
 	);
