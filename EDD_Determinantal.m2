@@ -15,7 +15,7 @@ symbolicWeightEDDegree(List,List,List):= o-> (F,data,weight)->(
     c:=codim I;
     win:=I+minors(c+1,M);
     unitQ:=sum apply(xList,i->i^2);
-    sl:=radical ideal singularLocus I;
+    sl :=  ideal singularLocus I;
     win=saturate(win,sl);
     if o.ReturnCriticalIdeal then return win else return degree win
 --    return degree win
