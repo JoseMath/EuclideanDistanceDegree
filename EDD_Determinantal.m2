@@ -1,4 +1,4 @@
--rand := randomZZ  --This is the function used to compute random numbers. 
+rand := randomZZ  --This is the function used to compute random numbers. 
 --random(QQ) is not a good choice in practice.
 
 --This function computes weighted ED degrees

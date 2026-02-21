@@ -195,8 +195,8 @@ jj=I
 f=(x1-jj*x4)^2+2*(x3-jj*x2)^2+Q--*(3*x1+5*x2-7*x3+2*x4)  (6,1)
 f=(x1-jj*x4)^3+2*(x3-jj*x2)^3+Q*(3*x1+5*x2-7*x3+2*x4)
 loadPackage"EuclideanDistanceDegree"
-determinantalGenericEuclideanDistanceDegree {f}  
-determinantalUnitEuclideanDistanceDegree {f}
+determinantalGenericEDDegree {f}  
+determinantalUnitEDDegree {f}
 
 bertiniPosDimSolve apply({x1,x2,x3,x4},i-> diff(i,f))
 bertiniPosDimSolve {f}
@@ -243,14 +243,14 @@ help leftKernelUnitEDDegree
 leftKernelUnitEDDegree(storeBM2Files,1,F)--UED degree is 6
 leftKernelGenericEDDegree(storeBM2Files,1,F)--GED degree is 18
 leftKernelUnitEDDegree(storeBM2Files,2,F|{Q})
-determinantalGenericEuclideanDistanceDegree  (F|{Q})
+determinantalGenericEDDegree  (F|{Q})
 
 help EuclideanDistanceDegree
 runBertini(storeBM2Files)
 readFile(storeBM2Files)
---determinantalUnitEuclideanDistanceDegree F
---determinantalGenericEuclideanDistanceDegree F
---determinantalUnitEuclideanDistanceDegree(F)
+--determinantalUnitEDDegree F
+--determinantalGenericEDDegree F
+--determinantalUnitEDDegree(F)
 Z= ideal singularLocus  (ideal F+ideal sum apply (xList,i->i^2))
 primaryDecomposition Z
 (degree Z)/2
@@ -330,7 +330,7 @@ T=kk[x0,x1,x2,x3]
 Q=x0^2+x1^2+x2^2+x3^2
 f=(x1-I*x0)^2+2*(x3-I*x2)^2+Q--*(3*x1+5*x2-7*x3+2*x4)  (6,1)
 --Symbolic computation
-EDDefect=1/(degree kk)*(determinantalGenericEuclideanDistanceDegree {f}-determinantalUnitEuclideanDistanceDegree {f})  
+EDDefect=1/(degree kk)*(determinantalGenericEDDegree {f}-determinantalUnitEDDegree {f})  
 --Create directory, write files, run computation.
 dir1=temporaryFileName(); mkdir dir1;dir2=temporaryFileName(); mkdir dir2;
 leftKernelGenericEDDegree(dir1,codim ideal {f},{f})
@@ -343,8 +343,8 @@ jj=I
 f=(x1-jj*x4)^2+2*(x3-jj*x2)^2+Q--*(3*x1+5*x2-7*x3+2*x4)  (6,1)
 f=(x1-jj*x4)^3+2*(x3-jj*x2)^3+Q*(3*x1+5*x2-7*x3+2*x4)
 loadPackage"EuclideanDistanceDegree"
-determinantalGenericEuclideanDistanceDegree {f}  
-determinantalUnitEuclideanDistanceDegree {f}
+determinantalGenericEDDegree {f}  
+determinantalUnitEDDegree {f}
 
 bertiniPosDimSolve apply({x1,x2,x3,x4},i-> diff(i,f))
 bertiniPosDimSolve {f}

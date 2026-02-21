@@ -28,14 +28,14 @@ help EuclideanDistanceDegree
 examples EuclideanDistanceDegree
      R=QQ[x,y];
      F={x^2+y^2-1};
-     2==determinantalUnitEuclideanDistanceDegree(F)
+     2==determinantalUnitEDDegree(F)
      R=QQ[x,y];
      F={x^2+y^2-1};  c=1;
      leftKernelUnitEDDegree(storeBM2Files,c,F)
      2==runBertiniEDDegree(storeBM2Files)
      R=QQ[x,y];
      F={x^2+y^2-1};  c=1
-     4==determinantalGenericEuclideanDistanceDegree(F)
+     4==determinantalGenericEDDegree(F)
      leftKernelGenericEDDegree(storeBM2Files,c,F)
      4==runBertiniEDDegree(storeBM2Files)
      R=QQ[x,y];

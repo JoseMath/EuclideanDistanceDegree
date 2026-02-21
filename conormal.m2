@@ -32,11 +32,11 @@ multidegree CV1
 
 testEDDegreeConjecture=method(Options=>{		})
 testEDDegreeConjecture(Ideal):= o-> (I)->(--Homogeneous ideal
---    wu:=determinantalUnitEuclideanDistanceDegree(flatten entries gens I)    ;
+--    wu:=determinantalUnitEDDegree(flatten entries gens I)    ;
     cod=6;
     wu:=leftKernelUnitEDDegree(theDir,cod,flatten entries gens I)    ;
     print("primal Unit",wu);
---    wg:=determinantalGenericEuclideanDistanceDegree(flatten entries gens I)  ;  
+--    wg:=determinantalGenericEDDegree(flatten entries gens I)  ;  
     wg:=leftKernelGenericEDDegree(theDir,cod,flatten entries gens I)  ;  
     print("primal Gen",wg);
     R:=ring I;
@@ -53,9 +53,9 @@ testEDDegreeConjecture(Ideal):= o-> (I)->(--Homogeneous ideal
     CV=saturate(CV,singI);
     dualX:=eliminate(primalVars,CV);
     dualF:=flatten entries gens sub(dualX,kk[dualVars]);
-    dwu:=determinantalUnitEuclideanDistanceDegree(dualF)    ;
+    dwu:=determinantalUnitEDDegree(dualF)    ;
     print("dual Unit",dwu);
-    dwg:=determinantalGenericEuclideanDistanceDegree(dualF)  ;         
+    dwg:=determinantalGenericEDDegree(dualF)  ;         
     print("dual Gen",dwg);
 --    return CV    
     )
