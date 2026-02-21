@@ -1,54 +1,47 @@
---restart
-rand:=randomZZ--This is the function used to compute random numbers. 
+-rand := randomZZ  --This is the function used to compute random numbers. 
 --random(QQ) is not a good choice in practice.
+
 --This function computes weighted ED degrees
---makeJac:=(F,x)->apply(F,f->apply(x,j->diff(j,f)))
-symbolicOptions={ReturnCriticalIdeal=>false		}
-symbolicWeightEDDegree=method(Options=>symbolicOptions)
-symbolicWeightEDDegree(List,List,List):= o-> (F,data,weight)->(
-    xList:=gens ring first F;
-    numX:=#xList;
-    I:=ideal(F);
-    jac:=matrix makeJac(F,xList);---Fix this so max can run it. 
-    topRow:=apply(#weight,i->2*weight_i*(xList_i-data_i));
-    M:=matrix{topRow}||jac;
-    c:=codim I;
-    win:=I+minors(c+1,M);
-    unitQ:=sum apply(xList,i->i^2);
-    sl :=  ideal singularLocus I;
-    win=saturate(win,sl);
+symbolicOptions = { ReturnCriticalIdeal => false }
+symbolicWeightEDDegree = method(Options => symbolicOptions)
+symbolicWeightEDDegree(List, List, List) := o-> (F, data, weight) -> (
+    I := ideal F;
+    xList := gens ring I;
+    jac := matrix makeJac(F, xList);
+    topRow := apply(#weight, i -> 2 * weight_i * (xList_i-data_i));
+    M := matrix{topRow} || jac;  -- augmented Jacobian
+    c := codim I;
+    win := I + minors(c+1, M); -- critical ideal
+    sl := radical ideal singularLowins I;
+    win = saturate(win, sl);
     if o.ReturnCriticalIdeal then return win else return degree win
---    return degree win
-    )
+)
 
-determinantalUnitEuclideanDistanceDegree=method(Options=>symbolicOptions)
-determinantalUnitEuclideanDistanceDegree(List):= o-> (F)->symbolicWeightEDDegree(F,
-    apply(#gens ring first F,i->rand()),
-    apply(#gens ring first F,i->1_(ring first F)))
+determinantalUnitEDDegree = method(Options => symbolicOptions)
+determinantalUnitEDDegree(List) := o-> (F) -> symbolicWeightEDDegree(
+    F,
+    apply(#gens ring first F, i->rand()),
+    apply(#gens ring first F, i->1_(ring first F))
+)
 
-determinantalGenericEuclideanDistanceDegree=method(Options=>symbolicOptions)
-determinantalGenericEuclideanDistanceDegree(List):= o-> (F)->symbolicWeightEDDegree(F,apply(#gens ring first F,i->rand()),apply(#gens ring first F,i->rand()))
+determinantalGenericEDDegree = method(Options => symbolicOptions)
+determinantalGenericEDDegree(List) := o-> (F) -> symbolicWeightEDDegree(
+    F,
+    apply(#gens ring first F, i->rand()),
+    apply(#gens ring first F, i->rand())
+)
 
-
-
--*
-R=QQ[t1,t2,t3,p1,p2,p3,p4,p5,p6]
-I=ideal(drop(gens R,3)-{t1*t3,t2*t3,t1*t2*t3,t1^2*t2*t3,t1^3*t2*t3,t1*t2^2*t3})
-E=eliminate({t1,t2,t3},I+ideal(t3-1))-- ED degree is 25
-E=eliminate({t1,t2,t3},I)-- ED degree is 28
-S=QQ[drop(gens R,3)]
-determinantalGenericEuclideanDistanceDegree(flatten entries gens sub(E,S))
-determinantalGenericEuclideanDistanceDegree()
-*-
-
+end
 
 -*
-R=QQ[p1,p2,p3,p4,p5,p6]
-I=ideal(drop(gens R,3)-{t1*t3,t2*t3,t1*t2*t3,t1^2*t2*t3,t1^3*t2*t3,t1*t2^2*t3})
-E=eliminate({t1,t2,t3},I+ideal(t3-1))-- ED degree is 25
-E=eliminate({t1,t2,t3},I)-- ED degree is 28
-S=QQ[drop(gens R,3)]
-determinantalGenericEuclideanDistanceDegree(flatten entries gens sub(E,S))
-determinantalGenericEuclideanDistanceDegree()
+restart
+load "./EDD_Determinantal.m2"
+makeJac = (system, unknowns) -> (for i in system list for j in unknowns list diff(j, i))
 
+R = QQ[x, y];
+F = {x^2 + y^2 - 1}
+(U,W) = ({12, 23}, {15, 331})
+UED = determinantalUnitEDDegree F 
+GED = determinantalGenericEDDegree F 
+ICP = symbolicWeightEDDegree(F, U, W, ReturnCriticalIdeal => true)
 *-
