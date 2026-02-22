@@ -192,7 +192,7 @@ bertini
 ```
 
 ---
-### 3. Macaulay2 is not finding Bertini 
+## Troubleshooting: Macaulay2 is not finding Bertini 
 
 There is a distinction between that can sometimes lead to confusion and cause errors when Macaulay2 is trying to find Bertini. 
 
@@ -201,7 +201,7 @@ There is a distinction between that can sometimes lead to confusion and cause er
 
 ---
 
-#### 3a. What Is the System PATH?
+### What Is the System PATH?
 
 The **PATH** is an environment variable used by the operating system's shell (e.g., `zsh`, `bash`) to determine where to look for executable programs.
 
@@ -231,7 +231,7 @@ If `bertini` is not in the PATH seen by Macaulay2, you get errors like:
 
 ---
 
-#### 3b. path versus PATH 
+### path versus PATH 
 Macaulay2 has a separate mechanism for locating its own **.m2 packages**. These are files written in the Macaulay2 language.
 This path list is *not* used to locate external programs. It usually includes directories like:
 
@@ -249,7 +249,7 @@ These directories contain:
 
 But, to run Bertini we need to search for system executables. 
 
-#### 3c. Specifying the correct path to Bertini
+### Specifying the correct path to Bertini
 You can make `bertini` discoverable by Macaulay2 using the Configuration option when loading the package.
 
 ```
