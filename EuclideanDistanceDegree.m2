@@ -1,19 +1,21 @@
 
 newPackage(
     "EuclideanDistanceDegree",
-    Version => "1.0", 
-    Date => "May 2019",
+    Version => "1.1", 
+    Date => "Feb 2026",
     Authors => {
    {Name => "Jose Israel Rodriguez",
        Email => "Jose@Math.wisc.edu",
        HomePage => "http://www.math.wisc.edu/~jose/"}
     },
     Headline => "Produces equations and computes ED degrees. ",
+    --DebuggingMode => false, -- turn off for release builds
     DebuggingMode => true,
     AuxiliaryFiles => false,
     PackageImports => {"SimpleDoc","Bertini","NumericalAlgebraicGeometry","Elimination"},
-    PackageExports => {"SimpleDoc","Bertini","NumericalAlgebraicGeometry","Elimination"},
-  Configuration => { "RandomCoefficients"=>CC,
+    PackageExports => {"Bertini","NumericalAlgebraicGeometry"},
+  Configuration => {
+      --"RandomCoefficients"=>CC,
       "Continuation"=>Bertini },
   CacheExampleOutput => false
 )
