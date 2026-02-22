@@ -59,3 +59,25 @@ load "ExampleEDDProjectiveHomotopy.m2"
 2. Define the ideal of critical points using provided constructors.
 3. Compute ED-degree symbolically, or
 4. Solve nearest‑point problems numerically via parameter homotopy continuation.
+
+
+
+## Comments on how to run Bertini (v1.7) on macOS (Used in the numerical methods)
+
+This comment explains how to bypass the macOS Gatekeeper warning and open **bertini** if you trust the source.
+
+### Download and allow the App from System Settings
+
+1. After downloading Bertini from its homepage https://bertini.nd.edu/download.html
+2. Attempt to open **bertini** by double-clicking it.
+3. macOS will display a warning:
+   > "Apple cannot verify that this app is free from malware."
+4. Open **System Settings**.
+5. Navigate to **Privacy & Security**.
+6. Scroll down until you see the message:
+   > "bertini was blocked because it is not from an identified developer."
+7. Click **Allow Anyway**.
+8. Try opening **bertini** again.
+9. A similar warning will appear, but now with an **Open** button.
+10. Click **Open** to launch the app.
+
