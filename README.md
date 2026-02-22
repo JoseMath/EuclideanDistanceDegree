@@ -61,12 +61,11 @@ load "ExampleEDDProjectiveHomotopy.m2"
 4. Solve nearest‑point problems numerically via parameter homotopy continuation.
 
 
-
-## Comments on how to run Bertini (v1.7) on macOS (Sequoia 15.6.1)
+# How to run Bertini (v1.7) on macOS (Sequoia 15.6.1)
 
 The third-party software Bertini is called in our numerical continuation methods. This comment explains how to bypass the macOS Gatekeeper warning and open **bertini** if you trust the source.
 
-### Download and allow the App from System Settings
+## Download and allow the App from System Settings
 
 1. After downloading Bertini from its homepage https://bertini.nd.edu/download.html
 2. Attempt to open **bertini** by double-clicking it.
@@ -82,8 +81,7 @@ The third-party software Bertini is called in our numerical continuation methods
 10. Click **Open** to launch the app.
 
 
-
-## Troubleshooting: Bertini in the terminal
+## Troubleshooting: unable to run Bertini in the terminal
 
 Bertini is usually run through the terminal and relies on input text files. Our Macaulay2 package, when using numerical methods, streamlines the creation of the input files and automates calls to Bertini. In this section we explain some our personal best practices and other ways to troubleshoot common issues.  
 
@@ -192,12 +190,9 @@ bertini
 ```
 
 ---
-## Troubleshooting: Macaulay2 is not finding Bertini 
+## How to tell Macaulay2 how to find Bertini?
 
-There is a distinction between that can sometimes lead to confusion and cause errors when Macaulay2 is trying to find Bertini. 
-
-- **The system PATH** used to locate external executables (e.g., `bertini`, `sage`, `singular`), and
-- **Macaulay2’s package search paths**, which are used only to locate `.m2` packages and libraries.
+There is a distinction between path and PATH that can sometimes lead to confusion and cause errors when Macaulay2 is trying to find Bertini. 
 
 ---
 
@@ -233,7 +228,7 @@ If `bertini` is not in the PATH seen by Macaulay2, you get errors like:
 
 ### path versus PATH 
 Macaulay2 has a separate mechanism for locating its own **.m2 packages**. These are files written in the Macaulay2 language.
-This path list is *not* used to locate external programs. It usually includes directories like:
+This path list is *not* used to locate external programs. The path for packages usually includes directories like:
 
 ```
 ./
