@@ -81,3 +81,119 @@ This comment explains how to bypass the macOS Gatekeeper warning and open **bert
 9. A similar warning will appear, but now with an **Open** button.
 10. Click **Open** to launch the app.
 
+
+
+## Troubleshooting: Bertini in the terminal
+
+Bertini is usually run through the terminal and relies on input text files. Our Macaulay2 package, when using numerical methods, streamlines the creation of the input files and automates calls to Bertini. In this section we explain some our personal best practices and other ways to troubleshoot common issues.  
+
+### 1. If macOS still blocks Bertini
+
+You may need to remove Apple's quarantine flag:
+
+```bash
+xattr -rd com.apple.quarantine /Applications/Bertini
+```
+
+Then attempt to run it again.
+
+---
+### 2. Fixing `zsh: command not found: bertini` on macOS
+
+This guide explains how to resolve the error:
+
+```
+zsh: command not found: bertini
+```
+
+This happens when macOS cannot find the **Bertini** executable in your system `PATH`.
+
+---
+
+#### 2a. Find where Bertini is installed
+
+You must locate the `bertini` executable. Common locations include:
+
+- `/Applications/BertiniApple_v1.7/bertini`
+- `/usr/local/bin/bertini`
+- `~/Applications/BertiniApple_v1.7/bertini`
+- A folder where you unzipped it (often `~/Downloads`)
+
+Try searching with:
+
+```bash
+find /Applications -name bertini 2>/dev/null
+```
+
+or:
+
+```bash
+find ~ -name bertini 2>/dev/null
+```
+
+---
+
+#### 2b. Test running Bertini using the full path
+
+Once you find it, try running it directly. Example:
+
+```bash
+/Applications/BertiniApple_v1.7/bertini 
+```
+
+or 
+
+```bash
+/Applications/BertiniApple_v1.7/bertini /Applications/BertiniApple_v1.7/examples/zero_dim/basic_example/input 
+```
+
+If this works, Bertini is installed correctly; your shell just doesn't know where it is yet. The former will likely return something like this 
+```
+ERROR: 'input' does not exist!!!
+
+Bertini will now exit due to this error.
+```
+because the input file does not exist in the same directory as Bertini.
+
+---
+
+#### 2c. Add Bertini to your PATH
+
+To run Bertini without specifying the path, you must add the directory containing `bertini` to your `PATH`.
+
+Example path:
+
+```
+/Applications/BertiniApple_v1.7
+```
+
+Edit your shell configuration:
+
+```bash
+open -e ~/.zshrc
+```
+
+Add this line at the bottom (update folder as needed):
+
+```bash
+export PATH="/Applications/BertiniApple_v1.7/bertini:$PATH"
+```
+
+Save and reload configuration:
+
+```bash
+source ~/.zshrc
+```
+
+Test:
+
+```bash
+bertini
+```
+
+---
+
+
+
+
+
