@@ -92,7 +92,7 @@ Bertini is usually run through the terminal and relies on input text files. Our 
 You may need to remove Apple's quarantine flag:
 
 ```bash
-xattr -rd com.apple.quarantine /Applications/Bertini
+xattr -rd com.apple.quarantine /Applications/BertiniApple_v1.7
 ```
 
 Then attempt to run it again.
