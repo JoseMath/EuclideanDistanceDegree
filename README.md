@@ -62,9 +62,9 @@ load "ExampleEDDProjectiveHomotopy.m2"
 
 
 
-## Comments on how to run Bertini (v1.7) on macOS (Used in the numerical methods)
+## Comments on how to run Bertini (v1.7) on macOS (Sequoia 15.6.1)
 
-This comment explains how to bypass the macOS Gatekeeper warning and open **bertini** if you trust the source.
+The third-party software Bertini is called in our numerical continuation methods. This comment explains how to bypass the macOS Gatekeeper warning and open **bertini** if you trust the source.
 
 ### Download and allow the App from System Settings
 
