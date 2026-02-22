@@ -67,7 +67,7 @@ addSlash = (aString) -> (
     if #aString =!= 0 then (
 	if aString_-1 === " " then error (aString | " cannot end with whitespace.");
 	if aString_-1 =!= "/" then aString = aString | "/";
-	)
+	);
     aString
     );
 makeJac = (system,unknowns)->(--it is a list of lists of partial derivatives of a polynomial
