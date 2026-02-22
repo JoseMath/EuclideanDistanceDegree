@@ -176,7 +176,7 @@ open -e ~/.zshrc
 Add this line at the bottom (update folder as needed):
 
 ```bash
-export PATH="/Applications/BertiniApple_v1.7/bertini:$PATH"
+export PATH="/Applications/BertiniApple_v1.7:$PATH"
 ```
 
 Save and reload configuration:
