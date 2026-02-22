@@ -190,14 +190,24 @@ bertini
 ```
 
 ---
-## How to tell Macaulay2 how to find Bertini?
+## Troubleshooting: how to help Macaulay2 find Bertini
 
-There is a distinction between path and PATH that can sometimes lead to confusion and cause errors when Macaulay2 is trying to find Bertini. 
+
+### Specifying the correct path to Bertini
+The best way to approach this issue is to first load the Bertini.m2 package followed by the EuclideanDistanceDegree package. 
+
+You can make `bertini` discoverable by Macaulay2 using the Configuration option when loading the package.
+
+```
+needsPackage("Bertini", Configuration=>{"BERTINIexecutable"=>"/Applications/BertiniApple_v1.7/bertini"})
+```
+or putting it in a directory in the system PATH.
 
 ---
 
-### What Is the System PATH?
+### More details on path versus PATH
 
+There is a distinction between path and PATH that can sometimes lead to confusion and cause errors when Macaulay2 is trying to find Bertini. 
 The **PATH** is an environment variable used by the operating system's shell (e.g., `zsh`, `bash`) to determine where to look for executable programs.
 
 When you run a command such as:
@@ -226,8 +236,7 @@ If `bertini` is not in the PATH seen by Macaulay2, you get errors like:
 
 ---
 
-### path versus PATH 
-Macaulay2 has a separate mechanism for locating its own **.m2 packages**. These are files written in the Macaulay2 language.
+On the other hand, Macaulay2 has a separate mechanism for locating its own **.m2 packages**. These are files written in the Macaulay2 language.
 This path list is *not* used to locate external programs. The path for packages usually includes directories like:
 
 ```
@@ -243,15 +252,6 @@ These directories contain:
 - Compiled Macaulay2 libraries
 
 But, to run Bertini we need to search for system executables. 
-
-### Specifying the correct path to Bertini
-You can make `bertini` discoverable by Macaulay2 using the Configuration option when loading the package.
-
-```
-needsPackage("Bertini", Configuration=>{"BERTINIexecutable"=>"/Applications/BertiniApple_v1.7/bertini"})
-```
-or putting it in a directory in the system PATH.
-
 
 ---
 
