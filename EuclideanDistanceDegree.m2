@@ -21,10 +21,10 @@ newPackage(
 )
 
 
---path=prepend("/Users/jo/Documents/GoodGit/EuclideanDistanceDegree",path)
+--path=prepend("/Users/joserodriguez/Documents/GitHub/EuclideanDistanceDegree",path)
 --loadPackage("EuclideanDistanceDegree",Reload=>true)
 --restart
-
+ 
 randomCC=()->random CC
 randCC=()->random CC
 randomRR=()->((-1)^(random(1,2)) *random RR)
@@ -63,10 +63,13 @@ export {
 -- INTERNAL METHODS
 --##########################################################################--
 parString = (aString)->("("|toString(aString)|")");
-addSlash = (aString)->(
-    if aString_-1===" " then error (aString|" cannot end with whitespace.");
-    if aString_-1=!="/" then aString=aString|"/";
-    return aString    )
+addSlash = (aString) -> (
+    if #aString =!= 0 then (
+	if aString_-1 === " " then error (aString | " cannot end with whitespace.");
+	if aString_-1 =!= "/" then aString = aString | "/";
+	)
+    aString
+    );
 makeJac = (system,unknowns)->(--it is a list of lists of partial derivatives of a polynomial
          for i in system list for j in unknowns list  diff(j,i))
 checkZero=(aSol,eps)->if aSol/abs//min<eps then false else true
