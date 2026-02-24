@@ -1,24 +1,26 @@
 newPackage(
-    "EuclideanDistanceDegree",
-    Version => "1.1", 
-    Date => "Feb 2026",
-    Authors => {
-   {Name => "Jose Israel Rodriguez",
-       Email => "Jose@Math.wisc.edu",
-       HomePage => "http://www.math.wisc.edu/~jose/"}
-    },
-    Headline => "Produces equations and computes ED degrees. ",
-    --DebuggingMode => false, -- turn off for release builds
-    DebuggingMode => true,
-    AuxiliaryFiles => false,
-    PackageImports => {"SimpleDoc","Bertini","NumericalAlgebraicGeometry","Elimination"},
-    PackageExports => {"Bertini","NumericalAlgebraicGeometry"},
+  "EuclideanDistanceDegree",
+  Version => "1.1", 
+  Date => "Feb 2026",
+  Authors => {
+    {Name => "Jose Israel Rodriguez",
+    Email => "Jose@Math.wisc.edu",
+    HomePage => "http://www.math.wisc.edu/~jose/"},
+    {Name => "Will Huang",
+    Email => "williamhuang5120@gmail.com",
+    HomePage => ""}
+  },
+  Headline => "Produces equations and computes ED degrees. ",
+  --DebuggingMode => false, -- turn off for release builds
+  DebuggingMode => true,
+  AuxiliaryFiles => false,
+  PackageImports => {"SimpleDoc","Bertini","NumericalAlgebraicGeometry","Elimination"},
+  PackageExports => {"Bertini","NumericalAlgebraicGeometry"},
   Configuration => {
-      --"RandomCoefficients"=>CC,
-      "Continuation"=>Bertini },
+    --"RandomCoefficients"=>CC,
+    "Continuation"=>Bertini },
   CacheExampleOutput => false
 )
-
 
 --path=prepend("/Users/joserodriguez/Documents/GitHub/EuclideanDistanceDegree",path)
 --loadPackage("EuclideanDistanceDegree",Reload=>true)
@@ -38,6 +40,7 @@ load"./EDD_Numerical.m2"
 
 
 export { 
+  "FileDirectory",
   "ReturnCriticalIdeal",
   "homotopyEDDegree",
   "symbolicWeightEDDegree",
@@ -46,7 +49,6 @@ export {
   "leftKernelWeightEDDegree",
   "leftKernelUnitEDDegree",
   "leftKernelGenericEDDegree",
-  "runBertiniEDDegree",
   "newNumericalComputationOptions",
   "NumericalComputationOptions",
   "numericWeightEDDegree",
@@ -60,18 +62,20 @@ export {
 --##########################################################################--
 -- INTERNAL METHODS
 --##########################################################################--
-parString = (aString)->("("|toString(aString)|")");
+parString = (aString) -> ("("|toString(aString)|")");
 addSlash = (aString) -> (
-    if #aString =!= 0 then (
-	if aString_-1 === " " then error (aString | " cannot end with whitespace.");
-	if aString_-1 =!= "/" then aString = aString | "/";
-	);
-    aString
-    );
-makeJac = (system,unknowns)->(--it is a list of lists of partial derivatives of a polynomial
-         for i in system list for j in unknowns list  diff(j,i))
-checkZero=(aSol,eps)->if aSol/abs//min<eps then false else true
-sortPointFunction = (aSol)->(if not (apply(aSol,i->{realPart i,imaginaryPart i}/abs//max)//min<1e-8) then true else false	    );
+  if #aString =!= 0 then (
+    if aString_-1 === " " then error(aString | " cannot end with whitespace.");
+    if aString_-1 =!= "/" then aString = aString | "/";
+  );
+  aString
+);
+makeJac = (system,unknowns) -> (
+  --it is a list of lists of partial derivatives of a polynomial
+  for i in system list for j in unknowns list diff(j,i)
+)
+checkZero = (aSol, eps) -> if aSol/abs//min < eps then false else true
+sortPointFunction = (aSol) -> (if not (apply(aSol,i->{realPart i,imaginaryPart i}/abs//max)//min<1e-8) then true else false);
 
 --##########################################################################--
 -- DOCUMENTATION
@@ -93,88 +97,86 @@ doc /// --EuclideanDistanceDegree
       Using symbolic computation, this code computes the (unit) ED degree of a circle. 		 
     Example
       R=QQ[x,y];
-	  F={x^2+y^2-1};
-	  --2==determinantalUnitEDDegree(F)
+      F={x^2+y^2-1};
+      2==determinantalUnitEDDegree(F)
     Text
       Using numeric computation, this code computes the (unit) ED degree of a circle. 		 
     Example
       R=QQ[x,y];
-	  F={x^2+y^2-1};	c=1;
-      --leftKernelUnitEDDegree(storeBM2Files,F)
-	  --2==runBertiniEDDegree(storeBM2Files)
+      F={x^2+y^2-1};
+      2==leftKernelUnitEDDegree(F)
     Text
       This package also computes generic ED degrees. The generic ED degree of X is always greater than or equal to the unit ED degree X.
     Example
       R=QQ[x,y];
-	  F={x^2+y^2-1};
-	  genericWeightVector={2,3};
-	  unitWeightVector={1,1};
-	  dataVector={5,7};
-	  --4==symbolicWeightEDDegree(F,dataVector,genericWeightVector)
-	  --2==symbolicWeightEDDegree(F,dataVector,unitWeightVector)
+      F={x^2+y^2-1};
+      genericWeightVector={2,3};
+      unitWeightVector={1,1};
+      dataVector={5,7};
+	    4==symbolicWeightEDDegree(F,dataVector,genericWeightVector)
+	    2==symbolicWeightEDDegree(F,dataVector,unitWeightVector)
     Text
       The most general method for computing ED degrees with symbolic computation is symbolicWeightEDDegree
     Example
    	  R=QQ[x,y];
-	  F={x^2+y^2-1};
-	  genericWeightVector={2,3};
-	  unitWeightVector={1,1};
-	  dataVector={5,7};
-	  --4==symbolicWeightEDDegree(F,dataVector,genericWeightVector)
-	  --2==symbolicWeightEDDegree(F,dataVector,unitWeightVector)		
+      F={x^2+y^2-1};
+      genericWeightVector={2,3};
+      unitWeightVector={1,1};
+      dataVector={5,7};
+      4==symbolicWeightEDDegree(F,dataVector,genericWeightVector)
+      2==symbolicWeightEDDegree(F,dataVector,unitWeightVector)		
     Text
       When the variety is an affine cone, one is able to compute ED degrees using ED degree homotopies, i.e., a structured parameter homotopy.
 	  The easiest case is when the variety is a hypersurface (or more generally, a complete intersection)  
     Example
       R=QQ[x1,x2,x3,x4]
-	  F={det genericMatrix(R,2,2)};
+	    F={det genericMatrix(R,2,2)};
       P=(F,F)
-      --6==numericEDDegree(P,"Generic")
-	  --2==numericEDDegree(P,"Unit")
+      6==numericEDDegree(P,"Generic")
+	    2==numericEDDegree(P,"Unit")
     Text
       When a V(F) is not a complete intersection we incorporate a membership test to filter out residual critical points.
-	  Here V(F) is an irreducible component of V(G) (a reducible variety) and #G===codim ideal F.
-	  These methods employ an equation by equation method called regeneration. 
+      Here V(F) is an irreducible component of V(G) (a reducible variety) and #G===codim ideal F.
+      These methods employ an equation by equation method called regeneration. 
     Example
       R=QQ[x1,x2,x3,x4,x5,x6]
-	  F=(minors(2,genericMatrix(R,3,2)))_*;
+	    F=(minors(2,genericMatrix(R,3,2)))_*;
       G=drop(F,-1);	
       P=(F,G)
       #G==codim ideal F;
-	  --10==numericEDDegree(P,"Generic")
-	  --2==numericEDDegree(P,"Unit")
+      10==numericEDDegree(P,"Generic")
+      2==numericEDDegree(P,"Unit")
     Text
       One may also determine (Unit) ED degrees using a parameter homotopy called a Weight-ED Degree Homotopy. 
     Example
       dir=temporaryFileName();if not fileExists dir then mkdir dir;
       R=QQ[x1,x2,x3,x4,x5,x6]
-	  F=(minors(2,genericMatrix(R,3,2)))_*;
+	    F=(minors(2,genericMatrix(R,3,2)))_*;
       G=drop(F,-1);	
       #G==codim ideal F;
       P=(F,G)
-	  NCO=newNumericalComputationOptions(dir,P)
+	    NCO=newNumericalComputationOptions(dir,P)
       NCO#"TargetWeight"=apply(#gens R,i->1)
-	  --2==homotopyEDDegree(NCO,"Weight",true,true)
+	    2==homotopyEDDegree(NCO,"Weight",true,true)
       NCO#"TargetWeight"=(apply(#gens R,i->random RR))
-	  --10==homotopyEDDegree(NCO,"Weight",false,true)
+	    10==homotopyEDDegree(NCO,"Weight",false,true)
     Text
       One may also compute crtiical points for different data using a parameter homotopy called a Data-ED Degree Homotopy. 
     Example
       dir=temporaryFileName();if not fileExists dir then mkdir dir;
       R=QQ[x1,x2,x3,x4,x5,x6]
-	  F=(minors(2,genericMatrix(R,3,2)))_*;
+	    F=(minors(2,genericMatrix(R,3,2)))_*;
       G=drop(F,-1);	
       #G==codim ideal F;
       P=(F,G)
-	  NCO=newNumericalComputationOptions(dir,P)
+	    NCO=newNumericalComputationOptions(dir,P)
       NCO#"TargetData"=apply(#gens R,i->1)
-	  --10==homotopyEDDegree(NCO,"Data",true,true)
-	  --importSolutionsFile(NCO#"Directory",NameSolutionsFile=>"member_points")	
+      10==homotopyEDDegree(NCO,"Data",true,true)
+      importSolutionsFile(NCO#"Directory",NameSolutionsFile=>"member_points")	
       NCO#"TargetWeight"={0}|(apply(-1+#gens R,i->1))
-	  --homotopyEDDegree(NCO,"Data",false,true)
-	  --importSolutionsFile(NCO#"Directory",NameSolutionsFile=>"member_points")	
-
-///;
+      homotopyEDDegree(NCO,"Data",false,true)
+      importSolutionsFile(NCO#"Directory",NameSolutionsFile=>"member_points")	
+///
 
 doc /// --symbolicWeightEDDegree
   Key
@@ -186,7 +188,7 @@ doc /// --symbolicWeightEDDegree
     (determinantalGenericEDDegree, List)
     ReturnCriticalIdeal
   Headline
-    compute Euclidean distance degrees using symbolic computation
+    compute Euclidean distance degrees of affine varieties using minors of the augmented Jacobian
   Usage
     UED = determinantalUnitEDDegree(F)
     GED = determinantalGenericEDDegree(F)
@@ -223,14 +225,60 @@ doc /// --symbolicWeightEDDegree
       ICP = symbolicWeightEDDegree(F, U, W, ReturnCriticalIdeal => true)
   Caveat
     none
-///;
-
--- TODO: Split off NumericalComputationOptions
-doc /// --NumericalComputationOptions
 ///
 
+doc /// --leftKernel
+  Key
+    leftKernelWeightEDDegree
+    (leftKernelWeightEDDegree, List, List, List)
+    leftKernelUnitEDDegree
+    (leftKernelUnitEDDegree, List)
+    leftKernelGenericEDDegree
+    (leftKernelGenericEDDegree, List)
+    TempDirectory
+  Headline
+    compute Euclidean distance degrees of affine varieties using the left kernel of the augmented Jacobian
+  Usage
+    GED = leftKernelWeightEDDegree(F,U,W)
+    GED = leftKernelGenericEDDegree(F)
+    UED = leftKernelUnitEDDegree(F)
+  Inputs
+    F:List
+      a system of polynomials (need not be square)
+    U:List
+      a (generic) data vector 
+    W:List
+      a (generic) weight vector
+  Outputs
+    GED:ZZ
+      a generic Euclidean distance degree 
+    UED:ZZ
+      a unit Euclidean distance degree 
+  Description
+    Text
+      This method computes Euclidean distance (ED) degrees for the variety defined by the system $F$ via Lagrange multipliers. The augmented
+      matrix is constructed and its left kernel is used to construct a critical ideal which is passed to Bertini. The Bertini input files 
+      are written in a temporary directory and then Bertini is ran to compute critical points.
+
+      By default, this method creates a temporary directory to store the input files. A specific directory can be specified using the
+      `TempDirectory` option and a directory will be created if it does not exist. The `leftKernelUnitEDDegree` method computes an ED 
+      degree using random (complex) data and unit weights, whereas `leftKernelGenericEDDegree` will use random data and random weights.
+    Example
+      R = QQ[x,y];
+      F = {x^2 + y^2 - 1}
+      (U,W) = ({1, 2}, {.15, .331})
+      dir = temporaryFileName();
+      GED = leftKernelWeightEDDegree(F, U, W, FileDirectory => dir);
+      GED = leftKernelGenericEDDegree F
+      UED = leftKernelUnitEDDegree F
+  Caveat
+    none
+///
+
+-- TODO: Split off NumericalComputationOptions (?)
+
 -- TODO: Document the new methods numericUnitEDDegree, numericGenericEDDegree
-doc /// --NumericalComputationOptions  --numeric
+doc /// --numeric
  Key
    NumericalComputationOptions
    newNumericalComputationOptions
@@ -288,55 +336,9 @@ doc /// --NumericalComputationOptions  --numeric
  Caveat
    none
       
-///;
+///
 
--- TODO: document
-doc /// --leftKernel
- Key
-   leftKernelWeightEDDegree
-   (leftKernelWeightEDDegree,String,List,List)
-   leftKernelUnitEDDegree
-   (leftKernelUnitEDDegree,String,List)
-   leftKernelGenericEDDegree
-   (leftKernelGenericEDDegree,String,List)
-   runBertiniEDDegree
-   (runBertiniEDDegree,String)
- Headline
-   a method to determine Euclidean distance degrees of affine varieties that are complete intersections using numerical computation
- Usage
-   GED = runBertiniEDDegree leftKernelWeightEDDegree(dir,c,F,W)
-   GED = runBertiniEDDegree leftKernelGenericEDDegree(dir,c,F)
-   UED = runBertiniEDDegree leftKernelUnitEDDegree(dir,c,F)
- Inputs
-   F:List
-     polynomials (system need not be square)
-   dir:String
-     a directory 
-   c:ZZ
-     a codimension
-   W:List
-     a (generic) weight vector
- Outputs
-   GED:ZZ
-     a generic Euclidean distance degree 
-   UED:ZZ
-     a unit Euclidean distance degree
- Description
-   Text
-     The Bertini input files are written in dir and then Bertini is ran.  
-   Example
-     R = QQ[x,y];     
-     F = {x^2+y^2-1}
-     W = {.15,.331}
-     dir=temporaryFileName(); mkdir dir;
-     --GED = runBertiniEDDegree leftKernelWeightEDDegree(dir,F,W)
-     --GED = runBertiniEDDegree leftKernelGenericEDDegree(dir,F)
-     --UED = runBertiniEDDegree leftKernelUnitEDDegree(dir,F)
- Caveat
-   none
-///;
-
--- TODO: finish
+-- TODO: finish documenting this
 doc /// --vanishTally
   Key
     vanishTally
@@ -377,5 +379,62 @@ TEST ///
 --load concatenate(MultiprojectiveWitnessSets#"source directory","./AEO/TST/Example1.tst.m2")
 ///
 
+TEST ///
+R = QQ[x0,x1,x2];
+F = {x0^2*x2 - x1^2*(x1 + x2)};
+assert(determinantalGenericEDDegree(F) === 7)
+
+R = QQ[jj]/ideal(jj^2+1)[x0,x1,x2];
+F = {x0^2*x1 -(x1 - jj*x2)^2*x2};
+assert(determinantalGenericEDDegree(F) === 14)
+
+R = QQ[x0,x1,x2,x3];
+F = {x0^2*x1-x2*x3^2};
+assert(determinantalGenericEDDegree(F) === 10)
+///
+
+-- TODO: add remaining surfaces (73 total)
+-- https://homepage.univie.ac.at/herwig.hauser/bildergalerie/gallery.html (check all 3 give the same result)
+-- https://www.imaginary.org/gallery/herwig-hauser-classic
+TEST ///  -- Herwig Hauser's algebraic surfaces gallery
+R = QQ[x,y,z]
+surfaces = {
+  x^2 + y^2*z^3 - z^4,
+  x^2 + y^2*z - z^2,
+  x^3*y + x*z^3 + y^3*z + z^3 + 7*z^2 + 5*z,
+  x^6 + y^6 + z^6 - 1,
+  3*x^2 + 3*y^2 + z^2 - 1,
+  (x^2 - y^3)^2 - (z^2 - y^2)^3,
+  x^2 + y^2 + z^3 - z^2,
+  x^2 + y^2 + z^2 + 1000 * (x^2 + y^2) * (x^2 + z^2) * (y^2 + z^2) - 1
+}
+
+for surface in surfaces do (
+  F = {surface}
+
+  UED_symb = determinantalUnitEDDegree F
+  GED_symb = determinantalGenericEDDegree F
+  UED_left = leftKernelUnitEDDegree F
+  GED_left = leftKernelGenericEDDegree F
+  UED_numeric = numericUnitEDDegree F
+  GED_numeric = numericGenericEDDegree F
+
+  assert(UED_symb === UED_left)
+  assert(UED_left === UED_numeric)
+  assert(GED_symb === GED_left)
+  assert(GED_left === UED_numeric)
+)
+///
+
+TEST ///  -- PNN function space: 3 -> 2 -> 3 PNN
+///
+
+TEST ///  -- Attention mechanism
+///
 
 end
+
+restart
+loadPackage "EuclideanDistanceDegree"
+installPackage "EuclideanDistanceDegree"
+check "EuclideanDistanceDegree"

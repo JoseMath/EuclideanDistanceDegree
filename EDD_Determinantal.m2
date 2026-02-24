@@ -12,7 +12,7 @@ symbolicWeightEDDegree(List, List, List) := o-> (F, data, weight) -> (
     M := matrix{topRow} || jac;  -- augmented Jacobian
     c := codim I;
     win := I + minors(c+1, M); -- critical ideal
-    sl := radical ideal singularLowins I;
+    sl := ideal singularLocus I;
     win = saturate(win, sl);
     if o.ReturnCriticalIdeal then return win else return degree win
 )
