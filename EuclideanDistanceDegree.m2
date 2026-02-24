@@ -39,7 +39,8 @@ load"./EDD_LeftKernel.m2"
 load"./EDD_Numerical.m2"
 
 
-export { 
+export {
+    "TempDirectory",
   "FileDirectory",
   "ReturnCriticalIdeal",
   "homotopyEDDegree",
