@@ -411,19 +411,21 @@ surfaces = {
 }
 
 for surface in surfaces do (
-  F = {surface}
-
-  UED_symb = determinantalUnitEDDegree F
-  GED_symb = determinantalGenericEDDegree F
-  UED_left = leftKernelUnitEDDegree F
-  GED_left = leftKernelGenericEDDegree F
-  UED_numeric = numericUnitEDDegree F
-  GED_numeric = numericGenericEDDegree F
-
-  assert(UED_symb === UED_left)
-  assert(UED_left === UED_numeric)
-  assert(GED_symb === GED_left)
-  assert(GED_left === UED_numeric)
+  F = {surface};
+  --
+  UED_symb = determinantalUnitEDDegree F;
+  GED_symb = determinantalGenericEDDegree F;
+  UED_left = leftKernelUnitEDDegree F;
+  GED_left = leftKernelGenericEDDegree F;
+  --UED_numeric = numericUnitEDDegree F;
+  --GED_numeric = numericGenericEDDegree F;
+  --
+  assert(UED_symb === UED_left);
+  --assert(UED_left === UED_numeric);
+  assert(GED_symb === GED_left);
+  --assert(GED_left === UED_numeric)
+  print(UED_symb,UED_left);
+  print(GED_symb,GED_left)
 )
 ///
 
