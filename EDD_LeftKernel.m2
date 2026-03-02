@@ -39,7 +39,7 @@ leftKernelWeightEDDegree(List, List, List) := o-> (F, data, weight) -> (
 
     dir = addSlash(dir);
     runBertini(dir);
-    --readFile(str);
+    --readFile(dir);
     numSols := null;
     scanLines(ell -> (numSols = value ell; break), dir | "nonsingular_solutions");
     return numSols

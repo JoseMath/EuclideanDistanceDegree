@@ -1,3 +1,5 @@
+-- TODO: if parameteryHomotopy works, check that we get the same answer as EDHomotopy, but it's probably faster
+
 newPackage(
   "EuclideanDistanceDegree",
   Version => "1.1", 
@@ -38,12 +40,10 @@ load"./EDD_Determinantal.m2"
 load"./EDD_LeftKernel.m2"
 load"./EDD_Numerical.m2"
 
-
 export {
-    "TempDirectory",
+  "TempDirectory",
   "FileDirectory",
   "ReturnCriticalIdeal",
-  "homotopyEDDegree",
   "symbolicWeightEDDegree",
   "determinantalUnitEDDegree",
   "determinantalGenericEDDegree",
@@ -52,8 +52,10 @@ export {
   "leftKernelGenericEDDegree",
   "newNumericalComputationOptions",
   "NumericalComputationOptions",
+  "homotopyEDDegree",
   "numericWeightEDDegree",
-  "numericEDDegree",
+  "numericGenericEDDegree",
+  "numericUnitEDDegree",
   "vanishTally"
 }
 
@@ -261,9 +263,9 @@ doc /// --leftKernel
       matrix is constructed and its left kernel is used to construct a critical ideal which is passed to Bertini. The Bertini input files 
       are written in a temporary directory and then Bertini is ran to compute critical points.
 
-      By default, this method creates a temporary directory to store the input files. A specific directory can be specified using the
-      `TempDirectory` option and a directory will be created if it does not exist. The `leftKernelUnitEDDegree` method computes an ED 
-      degree using random (complex) data and unit weights, whereas `leftKernelGenericEDDegree` will use random data and random weights.
+      By default, this method creates a temporary directory to store the input files. A specific directory can be specified as a string 
+      using the `TempDirectory` option, a directory will be created if it does not exist. The `leftKernelUnitEDDegree` method computes an 
+      ED degree using random (complex) data and unit weights, whereas `leftKernelGenericEDDegree` will use random data and random weights.
     Example
       R = QQ[x,y];
       F = {x^2 + y^2 - 1}
@@ -277,66 +279,81 @@ doc /// --leftKernel
 ///
 
 -- TODO: Split off NumericalComputationOptions (?)
+-*
+doc ///
+  Key
+    NumericalComputationOptions
+    newNumericalComputationOptions
+    (newNumericalComputationOptions, Sequence)
+    TempDirectory
+  Headline
+  Usage
+  Inputs
+  Outputs
+  Description
+    Text
+    Example
+  Caveat
+    None
+///
+*-
 
 -- TODO: Document the new methods numericUnitEDDegree, numericGenericEDDegree
 doc /// --numeric
- Key
-   NumericalComputationOptions
-   newNumericalComputationOptions
-   (newNumericalComputationOptions,String,Sequence)
-   homotopyEDDegree   
-   (homotopyEDDegree,NumericalComputationOptions,String,Boolean,Boolean)
-   numericWeightEDDegree
-   (numericWeightEDDegree,String,Sequence,List)
-   (numericWeightEDDegree,Sequence,List)
-   numericEDDegree
-   (numericEDDegree,Sequence,String)
- Headline
-   a method to determine Euclidean distance degrees of projective varieties (affine cones) using numerical computation
- Usage
-   GED = numericEDDegree((F,G),"Generic")
-   UED = numericEDDegree((F,G),"Unit")
-   NCO = newNumericalComputationOptions(dir,(F,G))
-   (NCO = newNumericalComputationOptions(dir,(F,G)); GED = homotopyEDDegree(NCO, "Weight", true, false))
-   (NCO = newNumericalComputationOptions(dir,(F,G)); UED = homotopyEDDegree(NCO, "Weight", true, true))
- Inputs
-   F:List
-     polynomials 
-   G:List
-     polynomials (complete intersection) such that V(F) is an irreducible component of V(G).
-   dir:String
-     a directory 
-   NCO:NumericalComputationOptions
-     a MutableHashTable to keeps track of the options and configurations for the homotopy methods
- Outputs
-   GED:ZZ
-     a generic Euclidean distance degree 
-   UED:ZZ
-     a unit Euclidean distance degree 
-   NCO:NumericalComputationOptions
-     a MutableHashTable to keeps track of the options and configurations for the homotopy methods
-   WS:List
-     a (generic) start weight vector
- Description
-   Text
-     The Bertini input files are written in dir and then Bertini is ran.  
-   Example
-     R = QQ[x,y];     
-     F = G = {x^2+y^2-1}
-     W1 = {1,1}
-     WS = {.7,1.2}
-     dir=temporaryFileName(); mkdir dir;
-     --GED = numericEDDegree((F,G),"Generic")
-     --UED = numericEDDegree((F,G),"Unit")
-     NCO = newNumericalComputationOptions(dir,(F,G))
-     NCO#"TargetWeight"
-     --GED = homotopyEDDegree(NCO, "Weight", true, false)
-     --UED = homotopyEDDegree(NCO, "Weight", true, true)
-     --GED = numericWeightEDDegree((F,G),WS)
-     --UED = numericWeightEDDegree((F,G),W1)
- Caveat
-   none
-      
+  Key
+    homotopyEDDegree   
+    (homotopyEDDegree,NumericalComputationOptions,String,Boolean,Boolean)
+    numericWeightEDDegree
+    (numericWeightEDDegree, Sequence, List, List)
+    numericUnitEDDegree
+    (numericUnitEDDegree, Sequence)
+    numericGenericEDDegree
+    (numericGenericEDDegree, Sequence)
+  Headline
+    compute Euclidean distance degrees of projective varieties (affine cones) using numerical computation
+  Usage
+    GED = numericEDDegree((F,G),"Generic")
+    UED = numericEDDegree((F,G),"Unit")
+    NCO = newNumericalComputationOptions(dir,(F,G))
+    (NCO = newNumericalComputationOptions(dir,(F,G)); GED = homotopyEDDegree(NCO, "Weight", true, false))
+    (NCO = newNumericalComputationOptions(dir,(F,G)); UED = homotopyEDDegree(NCO, "Weight", true, true))
+  Inputs
+    F:List
+      polynomials 
+    G:List
+      polynomials (complete intersection) such that V(F) is an irreducible component of V(G).
+    dir:String
+      a directory 
+    NCO:NumericalComputationOptions
+      a MutableHashTable to keeps track of the options and configurations for the homotopy methods
+  Outputs
+    GED:ZZ
+      a generic Euclidean distance degree 
+    UED:ZZ
+      a unit Euclidean distance degree 
+    NCO:NumericalComputationOptions
+      a MutableHashTable to keeps track of the options and configurations for the homotopy methods
+    WS:List
+      a (generic) start weight vector
+  Description
+    Text
+      The Bertini input files are written in dir and then Bertini is ran.  
+    Example
+      R = QQ[x,y];     
+      F = G = {x^2+y^2-1}
+      W1 = {1,1}
+      WS = {.7,1.2}
+      dir=temporaryFileName(); mkdir dir;
+      GED = numericEDDegree((F,G),"Generic")
+      UED = numericEDDegree((F,G),"Unit")
+      NCO = newNumericalComputationOptions(dir,(F,G))
+      NCO#"TargetWeight"
+      GED = homotopyEDDegree(NCO, "Weight", true, false)
+      UED = homotopyEDDegree(NCO, "Weight", true, true)
+      GED = numericWeightEDDegree((F,G),WS)
+      UED = numericWeightEDDegree((F,G),W1)
+  Caveat
+    none
 ///
 
 -- TODO: finish documenting this
@@ -350,7 +367,7 @@ doc /// --vanishTally
   Headline
     compute Euclidean distance degrees using symbolic computation
   Usage
-    counts = vanishTally(NCO, Z, 1e8)
+    counts = vanishTally(NCO, Z, 1e-8)
   Inputs
     NCO:NumericalComputationOptions
       ll
@@ -387,7 +404,8 @@ assert(determinantalGenericEDDegree(F) === 7)
 
 R = QQ[jj]/ideal(jj^2+1)[x0,x1,x2];
 F = {x0^2*x1 -(x1 - jj*x2)^2*x2};
-assert(determinantalGenericEDDegree(F) === 14)
+-- The output has a factor of 2 to account for the imaginary unit jj.
+assert(determinantalGenericEDDegree(F) === 2*7)
 
 R = QQ[x0,x1,x2,x3];
 F = {x0^2*x1-x2*x3^2};
@@ -395,10 +413,11 @@ assert(determinantalGenericEDDegree(F) === 10)
 ///
 
 -- TODO: add remaining surfaces (73 total)
+-- TODO: random seed issues?
 -- https://homepage.univie.ac.at/herwig.hauser/bildergalerie/gallery.html (check all 3 give the same result)
 -- https://www.imaginary.org/gallery/herwig-hauser-classic
 TEST ///  -- Herwig Hauser's algebraic surfaces gallery
-R = QQ[x,y,z]
+R = QQ[x,y,z];
 surfaces = {
   x^2 + y^2*z^3 - z^4,
   x^2 + y^2*z - z^2,
@@ -408,24 +427,22 @@ surfaces = {
   (x^2 - y^3)^2 - (z^2 - y^2)^3,
   x^2 + y^2 + z^3 - z^2,
   x^2 + y^2 + z^2 + 1000 * (x^2 + y^2) * (x^2 + z^2) * (y^2 + z^2) - 1
-}
+};
 
 for surface in surfaces do (
   F = {surface};
-  --
+
   UED_symb = determinantalUnitEDDegree F;
   GED_symb = determinantalGenericEDDegree F;
   UED_left = leftKernelUnitEDDegree F;
   GED_left = leftKernelGenericEDDegree F;
-  --UED_numeric = numericUnitEDDegree F;
-  --GED_numeric = numericGenericEDDegree F;
-  --
+  UED_numeric = numericUnitEDDegree F;
+  GED_numeric = numericGenericEDDegree F;
+
   assert(UED_symb === UED_left);
-  --assert(UED_left === UED_numeric);
+  assert(UED_left === UED_numeric);
   assert(GED_symb === GED_left);
-  --assert(GED_left === UED_numeric)
-  print(UED_symb,UED_left);
-  print(GED_symb,GED_left)
+  assert(GED_left === UED_numeric);
 )
 ///
 

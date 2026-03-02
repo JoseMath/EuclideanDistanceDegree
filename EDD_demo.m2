@@ -21,23 +21,20 @@ installPackage("EuclideanDistanceDegree")
 help EuclideanDistanceDegree
 *-
 
-
-
-
-
 examples EuclideanDistanceDegree
      R=QQ[x,y];
      F={x^2+y^2-1};
      2==determinantalUnitEDDegree(F)
+
      R=QQ[x,y];
      F={x^2+y^2-1};  c=1;
-     leftKernelUnitEDDegree(storeBM2Files,c,F)
-     2==runBertiniEDDegree(storeBM2Files)
+     2==leftKernelUnitEDDegree(F)
+     
      R=QQ[x,y];
-     F={x^2+y^2-1};  c=1
+     F={x^2+y^2-1};
      4==determinantalGenericEDDegree(F)
-     leftKernelGenericEDDegree(storeBM2Files,c,F)
-     4==runBertiniEDDegree(storeBM2Files)
+     4==leftKernelGenericEDDegree(F)
+     
      R=QQ[x,y];
      F={x^2+y^2-1};
      genericWeightVector={2,3};
@@ -45,11 +42,13 @@ examples EuclideanDistanceDegree
      dataVector={5,7};
      4==symbolicWeightEDDegree(F,dataVector,genericWeightVector)
      2==symbolicWeightEDDegree(F,dataVector,unitWeightVector)
+
      R=QQ[x1,x2,x3,x4]
      F={det genericMatrix(R,2,2)};
      P=(F,F)
      6==numericEDDegree(P,"Generic")
      2==numericEDDegree(P,"Unit")
+
      R=QQ[x1,x2,x3,x4,x5,x6]
      F=(minors(2,genericMatrix(R,3,2)))_*;
      G=drop(F,-1);
@@ -57,6 +56,7 @@ examples EuclideanDistanceDegree
      #G==codim ideal F;
      10==numericEDDegree(P,"Generic")
      2==numericEDDegree(P,"Unit")
+
      dir=temporaryFileName();if not fileExists dir then mkdir dir;
      R=QQ[x1,x2,x3,x4,x5,x6]
      F=(minors(2,genericMatrix(R,3,2)))_*;
@@ -68,6 +68,7 @@ examples EuclideanDistanceDegree
      homotopyEDDegree(NCO,"Weight",true,true)
      NCO#"TargetWeight"=(apply(-1+#gens R,i->1))|{0}
      homotopyEDDegree(NCO,"Weight",false,true)
+     
      dir=temporaryFileName();if not fileExists dir then mkdir dir;
      R=QQ[x1,x2,x3,x4,x5,x6]
      F=(minors(2,genericMatrix(R,3,2)))_*;

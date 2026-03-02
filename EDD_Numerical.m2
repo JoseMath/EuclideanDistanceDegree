@@ -1,59 +1,73 @@
 --restart
 --Projective formulation for intersections with linear spaces
-rand:=randomValue
+rand := randomValue
+(stageOne,stageTwo) = (1,2); 
+
 --Assume ring is a complex inexact field
 --G is a subset of F. 
-NumericalComputationOptions=new Type of MutableHashTable
-(stageOne,stageTwo)=(1,2); 
-         
-parameterKeys={    "StartWeight",    "TargetWeight",
-    "StartData",    "TargetData", 
-    "GammaVector"}
 
-jacKeys={    "JacobianWitnessModel","JacobianStartSubmodel","JacobianTargetSubmodel"}
-modelKeys={    "Model","WitnessModel",    "StartSubmodel", "TargetSubmodel"}
-degreeKeys={ "DegreeWitnessModel","DegreeSubmodel"}
---
-bertiniKeys={    "BertiniStartFiberSolveConfiguration","BertiniMembershipTestConfiguration",    "BertiniSubstitute","BertiniConstants"}
-coordinateKeys={    "PrimalCoordinates",    "HomogeneousVariableGroups",    "AffineVariableGroups"    }
-directoryKeys={"Directory"} 
-solutionKeys={"TrackSolutions"}
-outputKeys={"OutputType","FinerRestriction"}
+NumericalComputationOptions = new Type of MutableHashTable
 
-fixValues={"FixedData","FixedWeight","FixedSubmodel","FixedJacobianSubmodel"}
-nocKeys=parameterKeys|jacKeys|modelKeys|degreeKeys|bertiniKeys|coordinateKeys|directoryKeys|solutionKeys|fixValues|outputKeys
+parameterKeys = {"StartWeight", "TargetWeight", "StartData", "TargetData", "GammaVector"}
+jacKeys= {"JacobianWitnessModel", "JacobianStartSubmodel", "JacobianTargetSubmodel"}
+modelKeys = {"Model","WitnessModel", "StartSubmodel", "TargetSubmodel"}
+degreeKeys = {"DegreeWitnessModel", "DegreeSubmodel"}
 
-defaultFixValues={"StartData","StartWeight","StartSubmodel","JacobianStartSubmodel"}
-outputValues={"Standard","TestHomotopyConjectureGEDvUED"}
+bertiniKeys = {"BertiniStartFiberSolveConfiguration", "BertiniMembershipTestConfiguration", "BertiniSubstitute", "BertiniConstants"}
+coordinateKeys = {"PrimalCoordinates", "HomogeneousVariableGroups", "AffineVariableGroups"}
 
+directoryKeys = {"Directory"} 
+solutionKeys = {"TrackSolutions"}
+outputKeys = {"OutputType", "FinerRestriction"}
+fixValues = {"FixedData", "FixedWeight", "FixedSubmodel", "FixedJacobianSubmodel"}
 
-newNumericalComputationOptions=method()
-newNumericalComputationOptions(String,Sequence):=(theDir,P)->(
-    if #P==3 then (F,G,L):=P;
-    if #P==2 then (F,G,L)=(P_0,P_1,{});
-    NCO:=new NumericalComputationOptions from apply(nocKeys,i->i=>null);
-    NCO#"Directory"=theDir;----directory where the files will be stored.
-    NCO#"Model"=F,
+nocKeys = parameterKeys|jacKeys|modelKeys|degreeKeys|bertiniKeys|coordinateKeys|directoryKeys|solutionKeys|fixValues|outputKeys
+
+newNumericalComputationOptions = method(Options => { })
+newNumericalComputationOptions(String, Sequence) := o -> (dir, P) -> (
+    if #P==3 then (F,G,L) := P;
+    if #P==2 then (F,G,L) = (P_0,P_1,{});
+
+    NCO := new NumericalComputationOptions from apply(nocKeys, i -> i=>null);
+
+    -- Temp directory for Bertini input file
+    if not fileExists dir then mkdir dir;
+    NCO#"Directory"=dir;
+
+    -- Define models
+    NCO#"Model"=F;
     NCO#"WitnessModel"=G;
     NCO#"StartSubmodel"=L;
     NCO#"TargetSubmodel"=L;
+
+    -- Degree keys
     NCO#"DegreeSubmodel"=L/degree/first;
     NCO#"DegreeWitnessModel"=G/degree/first;
+
+    -- Jacobian
     NCO#"JacobianWitnessModel"=diff(matrix{gens ring first G}, transpose matrix{G} );
     NCO#"JacobianTargetSubmodel"=NCO#"JacobianStartSubmodel"=diff(matrix{gens ring first G}, transpose matrix {L} );
-    NCO#"PrimalCoordinates"=gens ring first F; ---This is different when working with a parameterization
+    
+    -- Data keys
     numX:=#gens ring first G;
     NCO#"TargetData"=NCO#"StartData"=apply(numX,i->random CC); 
     NCO#"TargetWeight"=apply(numX,i->1);
     NCO#"StartWeight"=apply(numX,i->random CC); 
---    NCO#"GammaVector"=apply(numX-1,i->random CC); 
+    --NCO#"GammaVector"=apply(numX-1,i->random CC); 
+
+    -- Coordinate keys
     scan(bertiniKeys,i->NCO#i={});
     NCO#"HomogeneousVariableGroups"={gens ring first F};
-    NCO#"AffineVariableGroups"={};    
+    NCO#"AffineVariableGroups"={};  
+    NCO#"PrimalCoordinates"=gens ring first F;  -- This is different when working with a parameterization
+
+    -- Fixed keys
     NCO#"FixedData"="StartData";
     NCO#"FixedWeight"="StartWeight";
     NCO#"FixedSubmodel"="StartSubmodel";
     NCO#"FixedJacobianSubmodel"="JacobianStartSubmodel";
+
+    -- TODO: give these names
     NCO#"JacobianVars"="jv";
     NCO#"GradientVars"="gv";
     NCO#"ScaleVars"="sv";
@@ -62,11 +76,18 @@ newNumericalComputationOptions(String,Sequence):=(theDir,P)->(
     NCO#"Infinity"=null;
     NCO#"PairGeneralHyperplaneList"=null;
     NCO#"IsProjective"=false;
+
+    -- Output keys
     NCO#"OutputType"="Standard";
     NCO#"FinerRestriction"={};
-    return NCO
-    )
 
+    return NCO
+)
+newNumericalComputationOptions(Sequence) := o -> (P) -> newNumericalComputationOptions(temporaryFileName(), P)
+
+--##########################################################################--
+-- Homotopy ED Degree method
+--##########################################################################--
 
 -- homotopyEDDegree
 -- ------------------------------------------------------------------------
@@ -100,13 +121,14 @@ newNumericalComputationOptions(String,Sequence):=(theDir,P)->(
 --   that was executed: stage 1 (index 1) or stage 2 (index 2), taken from
 --   stageEDDegBound (a 3-entry MutableList).
 
-homotopyEDDegree=method()
 possibleHT={"Weight","Data","Submodel"}
 stageOne=1
 stageTwo=2
 --ht="Weight"
 --isStageOne=true
 --isStageTwo=true
+
+homotopyEDDegree=method()
 homotopyEDDegree(NumericalComputationOptions,String,Boolean,Boolean):=(NCO,ht,isStageOne,isStageTwo)->(    
     ------------------------------------------------------------------------
     -- (CODE 1) Determine which parameter family the homotopy will vary.
@@ -393,7 +415,7 @@ homotopyEDDegree(NumericalComputationOptions,String,Boolean,Boolean):=(NCO,ht,is
 	nif:=nameFileFunction(stage,case,indexCase,hypersurface,ttOne);
 	runBertini(NCO#"Directory",NameB'InputFile=>nif);
     	moveB'File(NCO#"Directory","bertini_session.log","bertini_session_"|nif|".log",CopyB'File => false);
---    	print nif;
+    --    	print nif;
 	--MT TrackType=>3
 	writeIsMembershipFunction(stage,case,indexCase,hypersurface,ttThree);
 	nif=nameFileFunction(stage,case,indexCase,hypersurface,ttThree);
@@ -451,8 +473,8 @@ homotopyEDDegree(NumericalComputationOptions,String,Boolean,Boolean):=(NCO,ht,is
     --filterSolutionFunction("T1",{1,2,3,4,5,6,7},8)
     --	saturateFunction=positionFunction=positionFilterFunction;
     positionFilterFunction:=(stage,case,indexCase,hypersurface,bin)->(--(stage,case,indexCase,hypersurface)
---	isMembershipFunction(stage,case,indexCase,hypersurface);      
---    	(kp,ns):=positionMembershipFunction(stage,case,indexCase,hypersurface);
+    --	isMembershipFunction(stage,case,indexCase,hypersurface);      
+    --    	(kp,ns):=positionMembershipFunction(stage,case,indexCase,hypersurface);
     	if bin==="typeA" 
 	then isOffHypersurface:=(m->(m==={}))
     	else if bin==="typeB" 
@@ -504,14 +526,14 @@ homotopyEDDegree(NumericalComputationOptions,String,Boolean,Boolean):=(NCO,ht,is
 	if stage==stageOne then
 	runSolveInputFunction(stageOne,"input_first_solve") else 
 	runSolveInputFunction(stageTwo,"input_second_solve");
---	print("offPolyList",offPolyList);
+    --	print("offPolyList",offPolyList);
 	if stage===stageOne or NCO#"OutputType"=!="TestHomotopyConjectureGEDvUED"
 	then runSaturateUnionFunction(offPolyList,stage);
---    	print("WIN","SATURATE");
---    	moveB'File(NCO#"Directory","member_points","filterFile",CopyB'File=>true);
---	print("onPolyList",onPolyList);
+    --    	print("WIN","SATURATE");
+    --    	moveB'File(NCO#"Directory","member_points","filterFile",CopyB'File=>true);
+    --	print("onPolyList",onPolyList);
 	runRestrictIntersectionFunction(onPolyList,stage);
---	print("WIN","RESTRICT");
+    --	print("WIN","RESTRICT");
     	if stage===stageTwo and NCO#"FinerRestriction"=!={} 
 	then(
 	    print("In stage 2, keep the critical points where each of these polynomials vanish ",NCO#"FinerRestriction");
@@ -531,54 +553,51 @@ homotopyEDDegree(NumericalComputationOptions,String,Boolean,Boolean):=(NCO,ht,is
     if isStageOne then runComputationStage(stageOne,offPolyList,onPolyList);
     if isStageTwo then runComputationStage(stageTwo,offPolyList,onPolyList);
     if isStageTwo then return stageEDDegBound#2 else if isStageOne then return stageEDDegBound#1
-      )
+)
 
+--##########################################################################--
+-- Numerical ED Degree Methods
+--##########################################################################--
 
-vanishTally=method() 
-vanishTally(NumericalComputationOptions,Ideal,RR):=(NCO,Z,setTolerance)->(
-    limitPoints:=importMainDataFile(NCO#"Directory",NameMainDataFile=>"stageTwo_main_data");
-    (F,G):=(NCO#"Model",NCO#"WitnessModel");    
-    S:=CC[gens ring first F];
-    return tally apply(#limitPoints,s->(	    
-	p:=limitPoints#s;
-	X:=drop(drop(p#Coordinates,#G+1),-1);
-	--print X;
-	xSub:=apply(gens S,X,(i,j)->i=>j);
-	if 1e-8>norm sub(sub(gens Z,S),xSub) then {p#PathNumber}|p#PathsWithSameEndpoint else null )
-    ))
-vanishTally(NumericalComputationOptions,Ideal):=(NCO,Z)->(setTolerance:=1e-8,return vanishTally(NCO,Z,setTolerance))
-vanishTally(NumericalComputationOptions,List,RR):=(NCO,fegZ,setTolerance)->vanishTally(NCO,ideal fegZ,setTolerance)
-vanishTally(NumericalComputationOptions,List):=(NCO,fegZ)->vanishTally(NCO,ideal fegZ)
-
-
-
-numericWeightEDDegree=method()
-
-numericWeightEDDegree(String,Sequence,List):=(dir,P,wv)->(    
-    NCO:=newNumericalComputationOptions(dir,P);
---    WV:=apply(#gens ring first first P,i->random CC);
-    NCO#"StartWeight"=wv;
-    ht:="Weight";
-    isStageOne:=true;
-    isStageTwo:=false;
-    homotopyEDDegree(NCO,ht,isStageOne,isStageTwo)
+vanishTally = method() 
+vanishTally(NumericalComputationOptions, Ideal, RR) := (NCO, Z, setTolerance) -> (
+    limitPoints := importMainDataFile(NCO#"Directory", NameMainDataFile => "stageTwo_main_data");
+    (F, G) := (NCO#"Model", NCO#"WitnessModel");    
+    S := CC[gens ring first F];
+    return tally apply(#limitPoints, s->(	    
+        p := limitPoints#s;
+        X := drop(drop(p#Coordinates, #G+1), -1);
+        xSub := apply(gens S, X, (i,j) -> i=>j);
+        if setTolerance > norm sub(sub(gens Z,S), xSub) then {p#PathNumber}|p#PathsWithSameEndpoint else null )
     )
+)
+vanishTally(NumericalComputationOptions, Ideal) := (NCO, Z) -> vanishTally(NCO, Z, 1e-8)
+vanishTally(NumericalComputationOptions, List, RR) := (NCO, F, setTolerance) -> vanishTally(NCO, ideal F, setTolerance)
+vanishTally(NumericalComputationOptions, List) := (NCO, F) -> vanishTally(NCO, ideal F)
 
-numericWeightEDDegree(Sequence,List):=(P,wv)->(
-    dir:=temporaryFileName();    
-    if not fileExists dir then mkdir dir;
-    numericWeightEDDegree(dir,P,wv)    )
---numericWeightEDDegree(P,{1,2,3,4})
+numericalOptions = { TempDirectory => null }
+numericWeightEDDegree = method(Options => numericalOptions)
+numericWeightEDDegree(Sequence, List, List) := o -> (P, data, weight) -> (
+    dir := "";
+    if o.TempDirectory === null then dir = temporaryFileName() else dir = o.TempDirectory;
+    NCO := newNumericalComputationOptions(dir, P);
+    NCO#"StartWeight" = weight;
+    NCO#"TargetData" = NCO#"StartData" = data;
+    homotopyEDDegree(NCO, "Weight", true, false)
+)
 
-edTypes={"Generic","Unit"}
-numericEDDegree=method()
-numericEDDegree(Sequence,String):=(P,typeED)->(    
-    if typeED ==="Generic" then  wv:=apply(#gens ring first first P,i->random CC)
-    else if typeED==="Unit" then wv=apply(#gens ring first first P,i->1)
-    else error("last argument needs to be in "|toString edTypes);    
-    numericWeightEDDegree(P,wv));    
+numericUnitEDDegree = method(Options => numericalOptions)
+numericUnitEDDegree(Sequence) := o -> (P) -> numericWeightEDDegree(
+    P,
+    apply(#gens ring first first P, i->randCC()),
+    apply(#gens ring first first P, i->1_(ring first first P))
+)
 
+numericGenericEDDegree = method(Options => numericalOptions)
+numericGenericEDDegree(Sequence) := o -> (P) -> numericWeightEDDegree(
+    P,
+    apply(#gens ring first first P, i->randCC()),
+    apply(#gens ring first first P, i->randCC())
+)
 
 end
-
- 
