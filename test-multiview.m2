@@ -164,12 +164,14 @@ theoremEDRationalCurve(ZZ,ZZ,FunctionClosure,FunctionClosure) := (nn, dimPPImage
 
     -- Degree of the (zero-dimensional) critical locus (if finite)
     degreeIdealCriticalPoints = degree idealCriticalPoints;
-    --print degreeIdealCriticalPoints;
+    print "Working parametrically we find: ";
+    print ("    the ED degree is "|degreeIdealCriticalPoints);
 
     ------------------------------------------------------------------------
     -- Build a larger ring S = QQ[s,t, {pp_(i,j)}], where pp_(i,j) are variables
     -- representing image coordinates for entryIndex=0..dimPPImage-1 and viewIndex=0..nn-1.
     ------------------------------------------------------------------------
+    print"Working implicitly we find: ";
     pp := symbol pp;
 
     -- Adjoin the pp_(i,j) to gens R (which are s,t) to make S
@@ -200,16 +202,9 @@ theoremEDRationalCurve(ZZ,ZZ,FunctionClosure,FunctionClosure) := (nn, dimPPImage
     ------------------------------------------------------------------------
     modelImage := eliminate({S_0, S_1}, saturate(graph, ideal(S_0, S_1)));
 
-    --print ("Degree of image " | toString(degree modelImage));
-
-    ------------------------------------------------------------------------
-    -- (Optional) Compute ED degree in small-view cases
-    -- determinantalUnitEDDegree expects a prime ideal / model in a pure polynomial ring.
-    ------------------------------------------------------------------------
-    if nn == 1 or nn == 2 then (
-        modelEDDegree := determinantalUnitEDDegree flatten entries gens sub(modelImage, QQ[support modelImage]);
-        print ("ED degree " | toString(modelEDDegree));
-    );
+    print ("    the degree of the affine multiview variety is " | toString(degree modelImage));
+    modelEDDegree := determinantalUnitEDDegree flatten entries gens sub(modelImage, QQ[support modelImage]);
+    print ("    the ED degree is " | toString(modelEDDegree));
 )
 
 end
@@ -224,15 +219,21 @@ load"test-multiview.m2"
 --generateCameraMatrix=(dimPPImage,dimPPWorld)->matrix for i to dimPPImage list for j to dimPPWorld list random(1,100)
 generateCameraMatrix=(dimPPImage,dimPPWorld)->matrix for i to dimPPImage list for j to dimPPWorld list if i==j or j==dimPPWorld then random(1,100) else 0
 
-for dimPPImage from 2 to 5 do print toString (dimPPImage=>singleViewVarietiesOfCubicCurves(dimPPImage))
+--for dimPPImage from 2 to 5 do print toString (dimPPImage=>singleViewVarietiesOfCubicCurves(dimPPImage))
 
 EE =1
 fst= (s,t)->for i to EE list s^i*t^(EE-i)
 
+fst= (s,t)->for i to EE list s^i*t^(EE-i)
+dimPPWorld = 3
+
+fst = (s,t)->for i to dimPPWorld+1 list sum for i to EE list random(1,100)*s^i*t^(EE-i)
+-- testR=QQ[A,B]; fst(A,B)
+
 for dimPPImage from 2 to 3 do for nn from 1 to 2 do (
     print( "");
-    print ("n = "|nn|"h = "|dimPPImage);
-    print ("If satysfying Theorem 2.3 then ED degree is "|toString(3*EE*nn-2));
-    print("Computing using probabilistic symbolic methods");
+    print ("Assuming n = "|nn|" and  h = "|dimPPImage|".");
+    print ("If satysfying Theorem 2.3 then ED degree is "|toString(3*EE*nn-2)|".");
+    print("Computing using probabilistic symbolic methods...");
     theoremEDRationalCurve(nn,dimPPImage,fst)
     )
