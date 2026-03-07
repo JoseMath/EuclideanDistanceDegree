@@ -106,7 +106,8 @@ theoremEDRationalCurve(List,Matrix,List) := (arrangement, fP1,stBoth) -> (
     print ("    the degree of the affine multiview variety is " | toString(degree modelImage));
     modelEDDegree := determinantalUnitEDDegree flatten entries gens sub(modelImage, QQ[support modelImage]);
     print ("    the ED degree is " | toString(modelEDDegree));
-)
+    modelEDDegree
+    )    
 
 
 oneParameterAnchoredMultiviewVarieties = method()
@@ -129,7 +130,7 @@ oneParameterAnchoredMultiviewVarieties(
     s:=stBoth_0;
     t:=stBoth_1;    
     fP1 := matrix for i in subsets(dimPPWorld+1,kGr+1) list {det submatrix(M,i,)};
-    theoremEDRationalCurve(dArrangement,fP1,stBoth); 
+    theoremEDRationalCurve(dArrangement,fP1,stBoth)
     )
 
 end
@@ -138,7 +139,8 @@ end
 restart 
 needsPackage("Bertini", Configuration=>{"BERTINIexecutable"=>"/Applications/BertiniApple_v1.7/bertini"});
 path=prepend("/Users/joserodriguez/Documents/GitHub/EuclideanDistanceDegree/",path);
-needsPackage("EuclideanDistanceDegree");
+path=prepend("/Users/joserodriguez/Documents/GitHub/EuclideanDistanceDegree/tests",path);
+needsPackage("EuclideanDistanceDegree"); 
 load"anchored-one-parameter.m2"
 
 ---Input
@@ -147,13 +149,12 @@ generateCameraMatrix=(dimPPImage,dimPPWorld)->matrix for i to dimPPImage list fo
 
 
 R=QQ[s,t]
-EE =1
 dimPPWorld = 3
 stBoth= gens R
 generateCameraMatrix(2,dimPPWorld)
 
-kGr = 1
-for dimPPImage from 3 to 3 do for nn from 1 to 2 do (
+
+testCase =(kGr,nn,dimPPWorld,dimPPImage,EE)->(
     arrangement := for i to nn-1 list generateCameraMatrix(dimPPImage,dimPPWorld);
     print arrangement;
     fP1 = matrix for i to dimPPWorld list for j to kGr list random({EE},R);
@@ -166,4 +167,20 @@ for dimPPImage from 3 to 3 do for nn from 1 to 2 do (
     oneParameterAnchoredMultiviewVarieties(arrangement,fP1,stBoth)
     )
 
+for nn from 1 to 2 do (
+    --kGr,dimPPWorld are fixed.
+    (kGr,dimPPWorld,dimPPImage,EE)=(0,3,2,1);
+    assert(testCase(kGr,nn,dimPPWorld,dimPPImage,EE)==3*(EE)*(kGr+1)*nn-2);
+    (kGr,dimPPWorld,dimPPImage,EE)=(0,3,2,2);
+    assert(testCase(kGr,nn,dimPPWorld,dimPPImage,EE)==3*(EE)*(kGr+1)*nn-2);
+    (kGr,dimPPWorld,dimPPImage,EE)=(0,3,2,3);
+    assert(testCase(kGr,nn,dimPPWorld,dimPPImage,EE)==3*(EE)*(kGr+1)*nn-2);
+    --kGr,dimPPWorld is fixed.
+    (kGr,dimPPWorld,dimPPImage,EE)=(1,3,2,1);
+    assert(testCase(kGr,nn,dimPPWorld,dimPPImage,EE)==3*(EE)*(kGr+1)*nn-2);
+    (kGr,dimPPWorld,dimPPImage,EE)=(1,3,2,2);
+    assert(testCase(kGr,nn,dimPPWorld,dimPPImage,EE)==3*(EE)*(kGr+1)*nn-2);
+    (kGr,dimPPWorld,dimPPImage,EE)=(1,3,2,3);
+    assert(testCase(kGr,nn,dimPPWorld,dimPPImage,EE)==3*(EE)*(kGr+1)*nn-2);
+    )
 
