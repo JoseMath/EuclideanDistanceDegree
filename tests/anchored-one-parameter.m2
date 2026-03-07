@@ -167,20 +167,20 @@ testCase =(kGr,nn,dimPPWorld,dimPPImage,EE)->(
     oneParameterAnchoredMultiviewVarieties(arrangement,fP1,stBoth)
     )
 
+dimPPWorld=3;
 for nn from 1 to 2 do (
-    --kGr,dimPPWorld are fixed.
-    (kGr,dimPPWorld,dimPPImage,EE)=(0,3,2,1);
-    assert(testCase(kGr,nn,dimPPWorld,dimPPImage,EE)==3*(EE)*(kGr+1)*nn-2);
-    (kGr,dimPPWorld,dimPPImage,EE)=(0,3,2,2);
-    assert(testCase(kGr,nn,dimPPWorld,dimPPImage,EE)==3*(EE)*(kGr+1)*nn-2);
-    (kGr,dimPPWorld,dimPPImage,EE)=(0,3,2,3);
-    assert(testCase(kGr,nn,dimPPWorld,dimPPImage,EE)==3*(EE)*(kGr+1)*nn-2);
-    --kGr,dimPPWorld is fixed.
-    (kGr,dimPPWorld,dimPPImage,EE)=(1,3,2,1);
-    assert(testCase(kGr,nn,dimPPWorld,dimPPImage,EE)==3*(EE)*(kGr+1)*nn-2);
-    (kGr,dimPPWorld,dimPPImage,EE)=(1,3,2,2);
-    assert(testCase(kGr,nn,dimPPWorld,dimPPImage,EE)==3*(EE)*(kGr+1)*nn-2);
-    (kGr,dimPPWorld,dimPPImage,EE)=(1,3,2,3);
-    assert(testCase(kGr,nn,dimPPWorld,dimPPImage,EE)==3*(EE)*(kGr+1)*nn-2);
+    for dimPPImage from 2 to 3 do(
+	--kGr,dimPPWorld are fixed.
+	(kGr,dimPPImage,EE)=(0,2,1);
+	assert(testCase(kGr,nn,dimPPWorld,dimPPImage,EE)==3*(EE)*(kGr+1)*nn-2);
+	(kGr,dimPPImage,EE)=(0,2,2);
+	assert(testCase(kGr,nn,dimPPWorld,dimPPImage,EE)==3*(EE)*(kGr+1)*nn-2);
+	(kGr,dimPPImage,EE)=(0,2,3);
+	assert(testCase(kGr,nn,dimPPWorld,dimPPImage,EE)==3*(EE)*(kGr+1)*nn-2);
+	--kGr,dimPPWorld is fixed.
+	(kGr,dimPPImage,EE)=(1,2,1);
+	assert(testCase(kGr,nn,dimPPWorld,dimPPImage,EE)==3*(EE)*(kGr+1)*nn-2);
+	)
     )
+
 
