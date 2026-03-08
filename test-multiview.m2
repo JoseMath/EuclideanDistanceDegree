@@ -210,7 +210,7 @@ theoremEDRationalCurve(ZZ,ZZ,FunctionClosure,FunctionClosure) := (nn, dimPPImage
 end
 --end
  restart
-needsPackage("Bertini", Configuration=>{"BERTINIexecutable"=>"/Applications/BertiniApple_v1.7/bertini"});
+--needsPackage("Bertini", Configuration=>{"BERTINIexecutable"=>"/Applications/BertiniApple_v1.7/bertini"});
 path=prepend("/Users/joserodriguez/Documents/GitHub/EuclideanDistanceDegree/",path);
 needsPackage("EuclideanDistanceDegree");
 load"test-multiview.m2"
