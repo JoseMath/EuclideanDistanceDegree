@@ -394,22 +394,21 @@ doc /// --vanishTally
 --##########################################################################--
 
 TEST ///
---load concatenate(MultiprojectiveWitnessSets#"source directory","./AEO/TST/Example1.tst.m2")
-///
+  R = QQ[x0,x1,x2];
+  F = {x0^2*x2 - x1^2*(x1 + x2)};
+  assert(determinantalGenericEDDegree(F) === 7);
+  assert(determinantalUnitEDDegree(F) === 7);
 
-TEST ///
-R = QQ[x0,x1,x2];
-F = {x0^2*x2 - x1^2*(x1 + x2)};
-assert(determinantalGenericEDDegree(F) === 7)
+  R = QQ[jj]/ideal(jj^2+1)[x0,x1,x2];
+  F = {x0^2*x1 -(x1 - jj*x2)^2*x2};
+  -- The output has a factor of 2 to account for the imaginary unit jj.
+  assert(determinantalGenericEDDegree(F) === 2*7)
+  assert(determinantalUnitEDDegree(F) === 2*7);
 
-R = QQ[jj]/ideal(jj^2+1)[x0,x1,x2];
-F = {x0^2*x1 -(x1 - jj*x2)^2*x2};
--- The output has a factor of 2 to account for the imaginary unit jj.
-assert(determinantalGenericEDDegree(F) === 2*7)
-
-R = QQ[x0,x1,x2,x3];
-F = {x0^2*x1-x2*x3^2};
-assert(determinantalGenericEDDegree(F) === 10)
+  R = QQ[x0,x1,x2,x3];
+  F = {x0^2*x1-x2*x3^2};
+  assert(determinantalGenericEDDegree(F) === 10)
+  assert(determinantalUnitEDDegree(F) === 10)
 ///
 
 -- TODO: add remaining surfaces (73 total)
@@ -417,39 +416,75 @@ assert(determinantalGenericEDDegree(F) === 10)
 -- https://homepage.univie.ac.at/herwig.hauser/bildergalerie/gallery.html (check all 3 give the same result)
 -- https://www.imaginary.org/gallery/herwig-hauser-classic
 TEST ///  -- Herwig Hauser's algebraic surfaces gallery
-R = QQ[x,y,z];
-surfaces = {
-  x^2 + y^2*z^3 - z^4,
-  x^2 + y^2*z - z^2,
-  x^3*y + x*z^3 + y^3*z + z^3 + 7*z^2 + 5*z,
-  x^6 + y^6 + z^6 - 1,
-  3*x^2 + 3*y^2 + z^2 - 1,
-  (x^2 - y^3)^2 - (z^2 - y^2)^3,
-  x^2 + y^2 + z^3 - z^2,
-  x^2 + y^2 + z^2 + 1000 * (x^2 + y^2) * (x^2 + z^2) * (y^2 + z^2) - 1
-};
+  R = QQ[x,y,z];
+  surfaces = {
+    x^2 + y^2*z^3 - z^4,
+    x^2 + y^2*z - z^2,
+    x^3*y + x*z^3 + y^3*z + z^3 + 7*z^2 + 5*z,
+    x^6 + y^6 + z^6 - 1,
+    3*x^2 + 3*y^2 + z^2 - 1,
+    (x^2 - y^3)^2 - (z^2 - y^2)^3,
+    x^2 + y^2 + z^3 - z^2,
+    x^2 + y^2 + z^2 + 1000 * (x^2 + y^2) * (x^2 + z^2) * (y^2 + z^2) - 1
+  };
 
-for surface in surfaces do (
-  F = {surface};
+  for surface in surfaces do (
+    F = {surface};
 
-  UED_symb = determinantalUnitEDDegree F;
-  GED_symb = determinantalGenericEDDegree F;
-  UED_left = leftKernelUnitEDDegree F;
-  GED_left = leftKernelGenericEDDegree F;
-  UED_numeric = numericUnitEDDegree F;
-  GED_numeric = numericGenericEDDegree F;
+    UED_symb = determinantalUnitEDDegree F;
+    GED_symb = determinantalGenericEDDegree F;
+    UED_left = leftKernelUnitEDDegree F;
+    GED_left = leftKernelGenericEDDegree F;
+    UED_numeric = numericUnitEDDegree F;
+    GED_numeric = numericGenericEDDegree F;
 
-  assert(UED_symb === UED_left);
-  assert(UED_left === UED_numeric);
-  assert(GED_symb === GED_left);
-  assert(GED_left === UED_numeric);
-)
+    assert(UED_symb === UED_left);
+    assert(UED_left === UED_numeric);
+    assert(GED_symb === GED_left);
+    assert(GED_left === UED_numeric);
+  )
 ///
 
-TEST ///  -- PNN function space: 3 -> 2 -> 3 PNN
+TEST ///  -- PNN function space
+  d = (3,2,3);  -- layers
+  r = 2; -- activation function
+
+  -- Parameter space: weights
+  R = QQ[W_0..W_(d_1 * d_0), V_0..V_(d_2 * d_1)];
+  W = genericMatrix(R, W_0, d_1, d_0);
+  V = genericMatrix(R, V_0, d_2, d_1);
+
+  -- Function space
+  T = R[x_0..x_(d_0 - 1)];
+  X = transpose matrix{apply(d_0, i -> x_i)};  -- input
+  Z = W * X;
+  A = matrix table(d_1, 1, (i, j) -> (Z_(i,j))^r);
+  Phi = V * A;  -- output function
+
+  -- Create the ambient space (space of symmetric tensors)
+  mons = flatten entries basis(r, T);  -- homogeneous monomials of degree r
+  S = QQ[c_0..c_(d_2 * #mons - 1)];
+
+  -- Get image of the parameterization map
+  image = flatten apply(d_2, i -> (
+    f = Phi_(i,0);
+    apply(mons, m -> coefficient(m, f))
+  ));
+
+  -- Get the defining ideal
+  paramMap = map(R, S, image);
+  I = kernel paramMap;
+  F = gens I;
+
+  assert(leftKernelUnitEDDegree(F) === numericUnitEDDegree(F));
+  assert(leftKernelGenericEDDegree(F) === numericGenericEDDegree(F))
 ///
 
 TEST ///  -- Attention mechanism
+///
+
+TEST ///
+--load concatenate(MultiprojectiveWitnessSets#"source directory","./AEO/TST/Example1.tst.m2")
 ///
 
 end
