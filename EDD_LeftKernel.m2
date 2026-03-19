@@ -62,12 +62,10 @@ leftKernelGenericEDDegree(List) := o-> (F) -> leftKernelWeightEDDegree(
 end
 
 -*
-R = QQ[x,y];     
-F = {x^2+y^2-1}
-W = {.15,.331}
-dir=temporaryFileName()
-mkdir dir
-GED = leftKernelWeightEDDegree(dir,F,W)
-GED = leftKernelGenericEDDegree(dir,F)
-UED = leftKernelUnitEDDegree(dir,F)
+R = QQ[x,y];
+F = {x^2+y^2-1};
+(U,W) = ({.12, .23}, {.15, .331})
+GED = leftKernelWeightEDDegree(F, U, W);
+GED = leftKernelGenericEDDegree F;
+UED = leftKernelUnitEDDegree F;
 *-
