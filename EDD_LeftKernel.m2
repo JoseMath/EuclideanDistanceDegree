@@ -24,7 +24,6 @@ leftKernelWeightEDDegree(List, List, List) := o-> (F, data, weight) -> (
 
     win := restrictLam | F | critEq;
     constants := (transpose{uList, data}) | (transpose{wList, weight});
-    unitQ := sum apply(xList, i->i^2);
     --sl = ideal singularLocus I;
     --win = saturate(win, sl);
 
@@ -49,25 +48,25 @@ leftKernelUnitEDDegree = method(Options => leftKernelOptions)
 leftKernelUnitEDDegree(List) := o -> (F) -> leftKernelWeightEDDegree(
     F,
     apply(#gens ring first F, i->randCC()),
-    apply(#gens ring first F, i->1_(ring first F))
+    apply(#gens ring first F, i->1_(ring first F)),
+    o
 )
 
 leftKernelGenericEDDegree = method(Options => leftKernelOptions)
 leftKernelGenericEDDegree(List) := o-> (F) -> leftKernelWeightEDDegree(
     F,
     apply(#gens ring first F, i->randCC()),
-    apply(#gens ring first F, i->randCC())
+    apply(#gens ring first F, i->randCC()),
+    o
 )
 
 end
 
 -*
-R = QQ[x,y];     
-F = {x^2+y^2-1}
-W = {.15,.331}
-dir=temporaryFileName()
-mkdir dir
-GED = leftKernelWeightEDDegree(dir,F,W)
-GED = leftKernelGenericEDDegree(dir,F)
-UED = leftKernelUnitEDDegree(dir,F)
+R = QQ[x,y];
+F = {x^2+y^2-1};
+(U,W) = ({.12, .23}, {.15, .331})
+GED = leftKernelWeightEDDegree(F, U, W);
+GED = leftKernelGenericEDDegree F;
+UED = leftKernelUnitEDDegree F;
 *-
