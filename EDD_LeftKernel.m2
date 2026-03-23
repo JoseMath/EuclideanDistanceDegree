@@ -49,14 +49,16 @@ leftKernelUnitEDDegree = method(Options => leftKernelOptions)
 leftKernelUnitEDDegree(List) := o -> (F) -> leftKernelWeightEDDegree(
     F,
     apply(#gens ring first F, i->randCC()),
-    apply(#gens ring first F, i->1_(ring first F))
+    apply(#gens ring first F, i->1_(ring first F)),
+    o
 )
 
 leftKernelGenericEDDegree = method(Options => leftKernelOptions)
 leftKernelGenericEDDegree(List) := o-> (F) -> leftKernelWeightEDDegree(
     F,
     apply(#gens ring first F, i->randCC()),
-    apply(#gens ring first F, i->randCC())
+    apply(#gens ring first F, i->randCC()),
+    o
 )
 
 end

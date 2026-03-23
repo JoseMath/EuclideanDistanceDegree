@@ -615,14 +615,16 @@ numericUnitEDDegree = method(Options => numericalOptions)
 numericUnitEDDegree(Sequence) := o -> (P) -> numericWeightEDDegree(
     P,
     apply(#gens ring first first P, i->randCC()),
-    apply(#gens ring first first P, i->1_(ring first first P))
+    apply(#gens ring first first P, i->1_(ring first first P)),
+    o
 )
 
 numericGenericEDDegree = method(Options => numericalOptions)
 numericGenericEDDegree(Sequence) := o -> (P) -> numericWeightEDDegree(
     P,
     apply(#gens ring first first P, i->randCC()),
-    apply(#gens ring first first P, i->randCC())
+    apply(#gens ring first first P, i->randCC()),
+    o
 )
 
 vanishTally = method() 

@@ -21,14 +21,16 @@ determinantalUnitEDDegree = method(Options => symbolicOptions)
 determinantalUnitEDDegree(List) := o-> (F) -> symbolicWeightEDDegree(
     F,
     apply(#gens ring first F, i->rand()),
-    apply(#gens ring first F, i->1_(ring first F))
+    apply(#gens ring first F, i->1_(ring first F)),
+    o
 )
 
 determinantalGenericEDDegree = method(Options => symbolicOptions)
 determinantalGenericEDDegree(List) := o-> (F) -> symbolicWeightEDDegree(
     F,
     apply(#gens ring first F, i->rand()),
-    apply(#gens ring first F, i->rand())
+    apply(#gens ring first F, i->rand()),
+    o
 )
 
 end
