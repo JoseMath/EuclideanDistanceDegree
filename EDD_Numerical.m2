@@ -27,10 +27,7 @@ nocKeys = parameterKeys|jacKeys|modelKeys|degreeKeys|bertiniKeys|coordinateKeys|
 nocKeys = nocKeys|directoryKeys|solutionKeys|outputKeys|fixValues
 
 newNumericalComputationOptions = method(Options => { })
-newNumericalComputationOptions(String, Sequence) := o -> (dir, P) -> (
-    if #P==3 then (F,G,L) := P;
-    if #P==2 then (F,G,L) = (P_0,P_1,{});
-
+newNumericalComputationOptions(String, List, List, List) := o -> (dir, F, G, L) -> (
     NCO := new NumericalComputationOptions from apply(nocKeys, i -> i=>null);
 
     -- Temp directory for Bertini input file
@@ -87,7 +84,9 @@ newNumericalComputationOptions(String, Sequence) := o -> (dir, P) -> (
 
     return NCO
 )
-newNumericalComputationOptions(Sequence) := o -> (P) -> newNumericalComputationOptions(temporaryFileName(), P)
+newNumericalComputationOptions(String, List, List) := o -> (dir, F, G) -> newNumericalComputationOptions(dir, F, G, {})
+newNumericalComputationOptions(List, List, List) := o -> (F, G, L) -> newNumericalComputationOptions(temporaryFileName(), F, G, L)
+newNumericalComputationOptions(List, List) := o -> (F, G) -> newNumericalComputationOptions(F, G, {})
 
 --##########################################################################--
 -- Homotopy ED Degree method
@@ -602,28 +601,28 @@ homotopyEDDegree(NumericalComputationOptions, String, Boolean, Boolean) := (NCO,
 --##########################################################################--
 numericalOptions = { TempDirectory => null }
 numericWeightEDDegree = method(Options => numericalOptions)
-numericWeightEDDegree(Sequence, List, List) := o -> (P, data, weight) -> (
+numericWeightEDDegree(List, List, List, List) := o -> (F, G, data, weight) -> (
     dir := "";
     if o.TempDirectory === null then dir = temporaryFileName() else dir = o.TempDirectory;
-    NCO := newNumericalComputationOptions(dir, P);
+    NCO := newNumericalComputationOptions(dir, F, G);
     NCO#"StartWeight" = weight;
     NCO#"TargetData" = NCO#"StartData" = data;
     homotopyEDDegree(NCO, "Weight", true, false)
 )
 
 numericUnitEDDegree = method(Options => numericalOptions)
-numericUnitEDDegree(Sequence) := o -> (P) -> numericWeightEDDegree(
-    P,
-    apply(#gens ring first first P, i->randCC()),
-    apply(#gens ring first first P, i->1_(ring first first P)),
+numericUnitEDDegree(List, List) := o -> (F, G) -> numericWeightEDDegree(
+    F, G,
+    apply(#gens ring first F, i->randCC()),
+    apply(#gens ring first F, i->1_(ring first F)),
     o
 )
 
 numericGenericEDDegree = method(Options => numericalOptions)
-numericGenericEDDegree(Sequence) := o -> (P) -> numericWeightEDDegree(
-    P,
-    apply(#gens ring first first P, i->randCC()),
-    apply(#gens ring first first P, i->randCC()),
+numericGenericEDDegree(List, List) := o -> (F, G) -> numericWeightEDDegree(
+    F, G,
+    apply(#gens ring first F, i->randCC()),
+    apply(#gens ring first F, i->randCC()),
     o
 )
 

@@ -24,7 +24,6 @@ leftKernelWeightEDDegree(List, List, List) := o-> (F, data, weight) -> (
 
     win := restrictLam | F | critEq;
     constants := (transpose{uList, data}) | (transpose{wList, weight});
-    unitQ := sum apply(xList, i->i^2);
     --sl = ideal singularLocus I;
     --win = saturate(win, sl);
 
