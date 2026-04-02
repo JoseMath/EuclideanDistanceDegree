@@ -3,7 +3,7 @@
 newPackage(
   "EuclideanDistanceDegree",
   Version => "1.1", 
-  Date => "Feb 2026",
+  Date => "April 2026",
   Authors => {
     {Name => "Jose Israel Rodriguez",
     Email => "Jose@Math.wisc.edu",
@@ -56,7 +56,7 @@ export {
   "numericWeightEDDegree",
   "numericGenericEDDegree",
   "numericUnitEDDegree",
-  "vanishTally"
+  -- "vanishTally"
 }
 
 ----------------------------------------------------------------------------------------------------------------
@@ -265,14 +265,19 @@ doc /// --leftKernel
       UED = leftKernelUnitEDDegree F
 ///
 
--- Unused keys, maybe for a later version?
---   `OutputType` one of "Standard" or "TestHomotopyConjectureGEDvUED"
---   `BertiniMembershipTestConfiguration`
---   `BertiniSubstitute`
---   `BertiniConstants`
---   `BertiniStartFiberSolveConfiguration`
---   `TrackSolutions`
-doc ///
+-*
+Unused keys, maybe for a later version?
+  `OutputType` one of "Standard" or "TestHomotopyConjectureGEDvUED"
+  `BertiniMembershipTestConfiguration`
+  `BertiniSubstitute`
+  `BertiniConstants`
+  `BertiniStartFiberSolveConfiguration`
+  `TrackSolutions`
+  `StartSubmodel`
+      `HomogeneousVariableGroups` and `AffineVariableGroups` to modify variable groups. By default the variables of `ring F` are treated
+      as Homogeneous. 
+*-
+doc ///  -- NumericalComputationOptions
   Key
     NumericalComputationOptions
     newNumericalComputationOptions
@@ -293,9 +298,9 @@ doc ///
     F:List
       a system of polynomials (need not be square) defining the variety
     G:List
-      a system of polynomials (complete intersection) such that V(F) is an irreducible component of V(G).
+      a system of polynomials (complete intersection) such that V(F) is an irreducible component of V(G), i.e. a witness model
     L:List
-      a system of linear polynomials
+      a system of linear polynomials, i.e. a submodel
   Outputs
     NCO:NumericalComputationOptions
       a MutableHashTable to keeps track of the options and configurations for the homotopy methods
@@ -308,18 +313,16 @@ doc ///
       if it does not exist.
     Text
       Keys available to customize the homotopy include: 
-      `Directory` to change the directory Bertini is run from, the directory need not exist.
+      `Directory` to change the directory Bertini is run from, the directory need not exist. 
       `StartData` and `TargetData` if executing a Data homotopy, defaults to random complex data. 
       `StartWeight` and `TargetWeight` if executing a Weight homotopy, defaults to random complex and unit weights respectively. 
-      `Infinity` to add a hyperplane at infinity, one is create by default in @TO homotopyEDDegree@ if not present. 
+      `Infinity` to add a hyperplane at infinity for homogenization, one is create by default in @TO homotopyEDDegree@ if not present. 
       `PrimalCoordinates` to add additional variables to the ambient space. By default this field will already contain the variables of 
-      `ring F`, thus it is safer to append extra variables rather than overwriting the less, otherwise subsequence methods may fail. 
+      `ring F`, thus it is safer to append extra variables rather than overwriting the less, otherwise subsequent methods may fail. 
     Text
       Keys are also available to customize the Bertini run: 
-      `HomogeneousVariableGroups` and `AffineVariableGroups` to modify variable groups. By default the variables of `ring F` are treated
-      as Homogeneous. 
       `FinerRestriction` a list of polynomials to filter down critical points. Critical points will only be kept if they vanish
-      for every polynomial in this list.
+      for every polynomial in this list. 
     Example
       R = QQ[x,y]
       F = G = {x^2 + y^2 - 1}
@@ -349,19 +352,19 @@ doc /// --numeric
     F:List
       a system of polynomials (need not be square) defining the variety
     G:List
-      a system of polynomials (complete intersection) such that V(F) is an irreducible component of V(G).
+      a system of polynomials (complete intersection) such that V(F) is an irreducible component of V(G), i.e. a witness model
     L:List
-      a system of linear polynomials
+      a system of linear polynomials, i.e. a submodel
     U:List
       a (generic) data vector
     W:List
       a (generic) weight vector
     ht:String
-      one of "Weight", "Data", or "Submodel" which defines the type of homotopy to execute
+      one of "Weight" or "Data" which defines the type of homotopy to execute
     isStageOne:Boolean
-      indicates the stage of the homotopy continuation
+      if set, runs stage 1 to solve the start system
     isStageTwo:Boolean
-      indicates the stage of the homotop continuation
+      if set, runs stage 2 to solve the target system via path tracking
   Outputs
     GED:ZZ
       a generic Euclidean distance degree
@@ -369,7 +372,7 @@ doc /// --numeric
       a unit Euclidean distance degree
   Description
     Text
-      Uses a weight homotopy by default, though data and submodel homotopies are available. The Bertini input files are written in dir
+      Uses a weight homotopy by default, though data homotopy is also available. The Bertini input files are written in dir
       and then Bertini is ran. The `numericWeightEDDegree`, `numericUnitEDDegree`, and `numericGenericEDDegree` methods are all weight
       homotopy methods. Finer control over the homotopy is accomplished using the `homotopyEDDegree` method by modifying the
       @TO NumericalComputationOptions@ object.
@@ -397,6 +400,7 @@ doc /// --numeric
       UED = numericWeightEDDegree(F, G, U, W1, TempDirectory => dir)
 ///
 
+-*
 doc /// --vanishTally
   Key
     vanishTally
@@ -433,6 +437,7 @@ doc /// --vanishTally
   Caveat
     This method assumes that a Bertini run was completed in the directory specified by NCO.
 ///
+*-
 
 --##########################################################################--
 -- END DOCUMENTATION
@@ -512,66 +517,57 @@ TEST ///  -- PNN function space
   d = (3,1,1);
   r = 2;
 
-  -- Parameter space: weights
   R = QQ[W_0..W_(d_1 * d_0), V_0..V_(d_2 * d_1)];
   W = genericMatrix(R, W_0, d_1, d_0);
   V = genericMatrix(R, V_0, d_2, d_1);
 
-  -- Function space
   T = R[x_0..x_(d_0 - 1)];
-  X = transpose matrix{apply(d_0, i -> x_i)};  -- input
+  X = transpose matrix{apply(d_0, i -> x_i)};
   Z = W * X;
   A = matrix table(d_1, 1, (i, j) -> (Z_(i,j))^r);
-  Phi = V * A;  -- output function
+  Phi = V * A;
 
-  -- Create the ambient space (space of symmetric tensors)
-  mons = flatten entries basis(r, T);  -- homogeneous monomials of degree r
+  mons = flatten entries basis(r, T);
   S = QQ[c_0..c_(d_2 * #mons - 1)];
-
-  -- Get image of the parameterization map
   im = flatten apply(d_2, i -> (
     f = Phi_(i,0);
     apply(mons, m -> coefficient(m, f))
   ));
 
-  -- Get the defining ideal
   paramMap = map(R, S, im);
   I = kernel paramMap;
+  F = flatten entries gens I;
   c = codim I;
-
-  -- Prune variety down to a complete intersection
-  gensI = flatten entries gens I;
-  F = apply(c, i -> sum apply(#gensI, j -> (random(QQ) * gensI_j)));
-  assert(leftKernelUnitEDDegree(F) === numericUnitEDDegree(F, F));
-  assert(leftKernelGenericEDDegree(F) === numericGenericEDDegree(F, F));
+  G = apply(c, i -> sum apply(#F, j -> (random(QQ) * F_j)));  
+  assert(leftKernelUnitEDDegree(G) === numericUnitEDDegree(F, F));
+  assert(leftKernelGenericEDDegree(G) === numericGenericEDDegree(F, F));
 ///
 
 TEST ///  -- self-attention network function space
-  d = (1,2,1);
+  d = (1,2);
   l = #d - 1;
-  t = 1;
+  t = 2;
   
   -- Parameter space: weights
-  ARing = QQ[A_0..A_(d_0 * d_0), B_0..B_(d_1 * d_1)];  -- ring for attention matrices
-  VRing = QQ[V_0..V_(d_1 * d_0), W_0..W_(d_2 * d_1)];  -- ring for value matrices
+  ARing = QQ[A_0..A_(d_0 * d_0)];  -- ring for attention matrices
+  VRing = QQ[V_0..V_(d_1 * d_0)];  -- ring for value matrices
   R = ARing ** VRing;
 
-  As = (genericMatrix(R, A_0, d_0, d_0), genericMatrix(R, B_0, d_1, d_1));
-  Vs = (genericMatrix(R, V_0, d_1, d_0), genericMatrix(R, W_0, d_2, d_1));
+  A = genericMatrix(R, A_0, d_0, d_0);
+  V = genericMatrix(R, V_0, d_1, d_0);
 
   -- Function space
   T = R[x_0..x_(d_0 * t)];
   X = genericMatrix(T, x_0, d_0, t);  -- input
-  X = Vs_0 * X * transpose X * As_0 * X;
-  Phi = Vs_1 * X * transpose X * As_1 * X;  -- output
+  Phi = V * X * transpose X * A * X; -- output
 
   -- Create the ambient space (space of symmetric tensors)
   mons = flatten entries basis(3^l, T);  -- homogeneous monomials of degree 3^l
-  S = QQ[c_0..c_(d_2 * t * #mons - 1)];
+  S = QQ[c_0..c_(d_1 * t * #mons - 1)];
 
   -- Get image of the parameterization map
   PhiFlat = flatten entries Phi;
-  im = flatten apply(d_2 * t, i -> (
+  im = flatten apply(d_1 * t, i -> (
     f = PhiFlat_i;
     apply(mons, m -> coefficient(m, f))
   ));
@@ -581,10 +577,10 @@ TEST ///  -- self-attention network function space
   I = kernel paramMap;
   c = codim I;
 
-  gensI = flatten entries gens I;
-  F = apply(c, i -> sum apply(#gensI, j -> (random(QQ) * gensI_j)));
-  assert(leftKernelUnitEDDegree(F) === numericUnitEDDegree(F, F));
-  assert(leftKernelGenericEDDegree(F) === numericGenericEDDegree(F, F));
+  F = flatten entries gens I;
+  G = apply(c, i -> sum apply(#F, j -> (random(QQ) * F_j)));
+  assert(leftKernelUnitEDDegree(G) === numericUnitEDDegree(F, F));
+  assert(leftKernelGenericEDDegree(G) === numericGenericEDDegree(F, F));
 ///
 
 -*
