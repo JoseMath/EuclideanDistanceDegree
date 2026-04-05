@@ -35,14 +35,17 @@ getPNNIdeal(Sequence, ZZ) := (d, r) -> (
     I := kernel paramMap;
     F = flatten entries gens I;
 
-    -- Prune variety down to a complete intersection (for left kernel)
+    -- Prune variety down to a complete intersection
     c := codim I;
     G := F;
-    if #G != c then G := apply(c, i -> sum apply(#F, j -> (random(QQ) * F_j)));
-    (I, G)
+    if #G != c then G = apply(c, i -> sum apply(#F, j -> (random(QQ) * F_j)));
+    (I, F, G)
 )
 
-(I, F) = getPNNIdeal((3,1,1), 2);
-GED_left = leftKernelGenericEDDegree(F)
-GED_num = numericGenericEDDegree(F, F)
-GED_Left === GED_num
+(I, F, G) = getPNNIdeal((3,1,1), 2);
+GED = numericGenericEDDegree(F, G);
+print("Generic ED degree for (3,1,1), r = 2 is " | GED)
+
+(I, F, G) = getPNNIdeal((3,2,1), 2);
+GED = numericGenericEDDegree(F, G);
+print("Generic ED degree for (3,2,1), r = 2 is " | GED)
