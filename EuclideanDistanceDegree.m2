@@ -39,6 +39,7 @@ randomVector(ZZ,Thing):= o->(n,R) ->apply(n,i->randomValue(R))--list of length n
 load"./EDD_Determinantal.m2"
 load"./EDD_LeftKernel.m2"
 load"./EDD_Numerical.m2"
+load"./EDD_Parameterization.m2"
 
 export {
   "TempDirectory",
@@ -56,6 +57,9 @@ export {
   "numericWeightEDDegree",
   "numericGenericEDDegree",
   "numericUnitEDDegree",
+  "parameterizedWeightEDDegree",
+  "parameterizedGenericEDDegree",
+  "parameterizedUnitEDDegree"
   -- "vanishTally"
 }
 
@@ -74,7 +78,7 @@ addSlash = (aString) -> (
   aString
 );
 makeJac = (system,unknowns) -> (
-  --it is a list of lists of partial derivatives of a polynomial
+  -- it is a list of lists of partial derivatives of a polynomial
   for i in system list for j in unknowns list diff(j,i)
 )
 checkZero = (aSol, eps) -> if aSol/abs//min < eps then false else true
@@ -172,7 +176,7 @@ doc /// --EuclideanDistanceDegree Package
       importSolutionsFile(NCO#"Directory", NameSolutionsFile => "member_points")	
 ///
 
-doc /// --symbolicWeightEDDegree
+doc /// --symbolic
   Key
     symbolicWeightEDDegree
     (symbolicWeightEDDegree, List, List, List)
@@ -217,6 +221,47 @@ doc /// --symbolicWeightEDDegree
       UED = determinantalUnitEDDegree F
       GED = determinantalGenericEDDegree F
       ICP = symbolicWeightEDDegree(F, U, W, ReturnCriticalIdeal => true)
+///
+
+doc /// --parameterized
+  Key
+    parameterizedWeightEDDegree
+    (parameterizedWeightEDDegree, List, List, List)
+    parameterizedUnitEDDegree
+    (parameterizedUnitEDDegree, List)
+    parameterizedGenericEDDegree
+    (parameterizedGenericEDDegree, List)
+  Headline
+    compute Euclidean distance degrees of parameterized varieties symbolically using conormal varieties
+  Usage
+    UED = parameterizedUnitEDDegree(F)
+    GED = parameterizedGenericEDDegree(F)
+    GED = parameterizedWeightEDDegree(F, U, W)
+  Inputs
+    F:List
+      a system of polynomials in $d$ variables parameterizing a $d$-dimensional variety 
+    U:List
+      a (generic) data vector 
+    W:List
+      a (generic) weight vector
+  Outputs
+    GED:ZZ
+      a generic Euclidean distance degree
+    UED:ZZ
+      a unit Euclidean distance degree
+  Description
+    Text
+      This method computes Euclidean distance (ED) degrees for the variety parameterized by the a set of polynomials $F$ in $d$ variables. If
+      the resulting variety is $d$-dimensional, then by finding a global description for the kernel of the Jacobian map, the critical
+      equations of the variety can be computed. The `parameterizedUnitEDDegree` method computes an ED degree using random (integer) data an
+      unit weights, whereas `parameterizedGenericEDDegree` will use random data and random weights.
+    Example
+      R = QQ[x,y]
+      F = {x^2 + 1, x * y, y - 1}
+      (U,W) = ({12, 23, 25}, {15, 331, 1})
+      UED = parameterizedUnitEDDegree F
+      GED = parameterizedGenericEDDegree F
+      GED = parameterizedWeightEDDegree(F, U, W)
 ///
 
 doc /// --leftKernel
@@ -479,10 +524,7 @@ TEST /// -- basic examples
   assert(numericUnitEDDegree(F, G) === 2);
 ///
 
--- TODO: add remaining surfaces (73 total)
--- TODO: random seed issues?
--- https://homepage.univie.ac.at/herwig.hauser/bildergalerie/gallery.html (check all 3 give the same result)
--- https://www.imaginary.org/gallery/herwig-hauser-classic
+-- https://homepage.univie.ac.at/herwig.hauser/bildergalerie/gallery.html 
 TEST ///  -- Herwig Hauser's algebraic surfaces gallery
   R = QQ[x,y,z];
   surfaces = {
@@ -502,6 +544,7 @@ TEST ///  -- Herwig Hauser's algebraic surfaces gallery
     UED_symb = determinantalUnitEDDegree F;
     GED_symb = determinantalGenericEDDegree F;
     UED_left = leftKernelUnitEDDegree F;
+
     GED_left = leftKernelGenericEDDegree F;
     UED_numeric = numericUnitEDDegree(F, F);
     GED_numeric = numericGenericEDDegree(F, F);
@@ -538,9 +581,9 @@ TEST ///  -- PNN function space
   I = kernel paramMap;
   F = flatten entries gens I;
   c = codim I;
-  G = apply(c, i -> sum apply(#F, j -> (random(QQ) * F_j)));  
-  assert(leftKernelUnitEDDegree(G) === numericUnitEDDegree(F, F));
-  assert(leftKernelGenericEDDegree(G) === numericGenericEDDegree(F, F));
+  G = apply(c, i -> sum apply(#F, j -> (random(QQ) * F_j)));
+  assert(leftKernelUnitEDDegree(G) === numericUnitEDDegree(G, G));
+  assert(leftKernelGenericEDDegree(G) === numericGenericEDDegree(G, G));
 ///
 
 TEST ///  -- self-attention network function space
