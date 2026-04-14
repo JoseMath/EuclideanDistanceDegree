@@ -445,6 +445,40 @@ doc /// --numeric
       UED = numericWeightEDDegree(F, G, U, W1, TempDirectory => dir)
 ///
 
+doc /// --average
+  Key
+    averageNumericEDDegree
+    (averageNumericEDDegree, List, List, ZZ)
+    (averageNumericEDDegree, List, List, List, ZZ)
+  Headline
+    compute average ED degrees using sampled data
+  Usage
+    GED = averageNumericEDDegree(F, G, 10)
+    GED = averageNumericEDDegree(F, G, L, 10)
+  Inputs
+    F: List
+      list of polynomials
+    G: List
+      list of polynomials (complete intersection) such that V(F) is an irreducible component of V(G), i.e. a witness model
+    L: List
+      list of linear polynomials, i.e. a submodel
+    SampleGenerator: FunctionClosure
+      a function which generates data samples
+    n: ZZ
+      number of samples to take
+  Outputs
+    ED: ZZ
+      average ED degree after n trials
+  Description
+    Text
+      Generates a sample using the given function and uses homotopy continuation to find critical points. The average number of real critical
+      points is returned. 
+    Example
+      R = QQ[x,y]
+      F = G = {x^2 + y^2 - 1}
+      ED = averageNumericEDDegree(F, G, 10)
+///
+
 -*
 doc /// --vanishTally
   Key
@@ -480,7 +514,7 @@ doc /// --vanishTally
       GED = homotopyEDDegree(NCO, "Weight", true, true)
       vanishTally(NCO, F)
   Caveat
-    This method assumes that a Bertini run was completed in the directory specified by NCO.
+    This method assumes that a stage 2 homotopy was completed in the directory specified by NCO.
 ///
 *-
 
