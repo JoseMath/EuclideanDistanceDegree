@@ -594,8 +594,7 @@ homotopyEDDegree(NumericalComputationOptions, String, Boolean, Boolean) := (NCO,
             --print("In stage 2, keep the critical points where each of these polynomials vanish ",NCO#"FinerRestriction");
             runRestrictIntersectionFunction(NCO#"FinerRestriction",stage)
         );
-        print("We have completed stage ",stage);
-        print(peek stageEDDegBound)
+        print("We have completed stage ",stage)
     ); 
 
     -- Polynomials that should vanish (onPolyList) or should not vanish (offPolyList).
@@ -644,6 +643,36 @@ numericGenericEDDegree(List, List) := o -> (F, G) -> numericWeightEDDegree(
     o
 )
 
+-- aED of cardiod (4.6) or ellipse (4.5) from Draisma et al.
+averageNumericEDDegree = method(Options => numericalOptions)
+averageNumericEDDegree(List, List, List, ZZ) := o -> (F, G, L, n) -> (
+    -- Initial run
+    R := ring first F;
+    NCO := newNumericalComputationOptions(F, G, L);
+    homotopyEDDegree(NCO, "Data", true, false);
+
+    -- homotopy to sampled data and average
+    avgEDDeg := 0;
+    for i to n do (
+        NCO#"StartData" = apply(#gens R, i -> randomRR());
+        homotopyEDDegree(NCO, "Data", false, true);
+
+        -- count real critical points
+        limitPoints := importMainDataFile(NCO#"Directory", NameMainDataFile => "stageTwo_main_data");
+        realEDDeg := number(limitPoints, P -> (
+            X := drop(drop(P#Coordinates, #G+1), -1);
+            all(X, x -> imaginaryPart x < 1e-8)
+        ));
+        avgEDDeg = avgEDDeg + realEDDeg;
+    );
+    avgEDDeg/n
+)
+averageNumericEDDegree(List, List, ZZ) := o -> (F, G, n) -> averageNumericEDDegree(
+    F, G, {},
+    n,
+    o
+)
+
 vanishTally = method() 
 vanishTally(NumericalComputationOptions, Ideal, RR) := (NCO, Z, setTolerance) -> (
     limitPoints := importMainDataFile(NCO#"Directory", NameMainDataFile => "stageTwo_main_data");
@@ -653,8 +682,8 @@ vanishTally(NumericalComputationOptions, Ideal, RR) := (NCO, Z, setTolerance) ->
         p := limitPoints#s;
         X := drop(drop(p#Coordinates, #G+1), -1);
         xSub := apply(gens S, X, (i,j) -> i=>j);
-        if setTolerance > norm sub(sub(gens Z,S), xSub) then {p#PathNumber}|p#PathsWithSameEndpoint else null )
-    )
+        if setTolerance > norm sub(sub(gens Z,S), xSub) then {p#PathNumber}|p#PathsWithSameEndpoint else null 
+    ))
 )
 vanishTally(NumericalComputationOptions, Ideal) := (NCO, Z) -> vanishTally(NCO, Z, 1e-8)
 vanishTally(NumericalComputationOptions, List, RR) := (NCO, F, setTolerance) -> vanishTally(NCO, ideal F, setTolerance)

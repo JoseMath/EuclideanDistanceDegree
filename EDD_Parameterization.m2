@@ -15,6 +15,7 @@ parameterizedWeightEDDegree(List, List, List) := (F, U, W) -> (
 
     -- Find a spanning set for ker(jacM)
     jacM := transpose sub(matrix makeJac(apply(F, i->sub(i,S)), xList), S);
+    assert(rank jacM == numX);  -- ensure dim X = d
     columnVectors := gens kernel jacM;
     evalColumnVectors := sub(columnVectors, apply(xList, x -> x => random(1, 100)));
 
@@ -94,6 +95,6 @@ I = ideal sub(outMatrix-gradObjective,fixU)
 degree I--- I think this is a multiple of the ED degree
 decompose I
 
-imageModel = eliminate( support M,ideal (M-matrix {for i from 1 to n list u_i}))
+imageModel = eliminate(support M, ideal(M - matrix{for i from 1 to n list u_i}))
 determinantalUnitEDDegree((sub(imageModel,QQ[support imageModel]))_*)
 *-
