@@ -59,7 +59,8 @@ export {
   "numericUnitEDDegree",
   "parameterizedWeightEDDegree",
   "parameterizedGenericEDDegree",
-  "parameterizedUnitEDDegree"
+  "parameterizedUnitEDDegree",
+  "averageNumericEDDegree"
   -- "vanishTally"
 }
 
