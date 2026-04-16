@@ -41,11 +41,11 @@ getAttentionIdeal(Sequence, ZZ) := (d, t) -> (
     (I, F, G)
 )
 
--*
+end
+
 I = getAttentionIdeal((1,1,2), 2);
 c = codim I;
 G = apply(c, i -> sum apply(#F, j -> (random(QQ) * F_j)));
 GED_left = leftKernelGenericEDDegree(G)
 GED_num = numericGenericEDDegree(F, F)
 GED_Left === GED_num
-*-

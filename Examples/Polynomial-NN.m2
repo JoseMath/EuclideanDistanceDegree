@@ -39,13 +39,17 @@ getPNNIdeal(Sequence, ZZ) := (d, r) -> (
     c := codim I;
     G := F;
     if #G != c then G = apply(c, i -> sum apply(#F, j -> (random(QQ) * F_j)));
-    (I, F, G)
+    (I, F, G, im)
 )
 
-(I, F, G) = getPNNIdeal((3,1,1), 2);
-GED = numericGenericEDDegree(F, G);
+end 
+
+(I, F, G, im) = getPNNIdeal((3,1,1), 2);
+--GED = numericGenericEDDegree(F, G);
+GED = parameterizedGenericEDDegree im;
 print("Generic ED degree for (3,1,1), r = 2 is " | GED)
 
-(I, F, G) = getPNNIdeal((3,2,1), 2);
-GED = numericGenericEDDegree(F, G);
+(I, F, G, im) = getPNNIdeal((3,2,1), 2);
+--GED = numericGenericEDDegree(F, G);
+GED = parameterizedGenericEDDegree im;
 print("Generic ED degree for (3,2,1), r = 2 is " | GED)
