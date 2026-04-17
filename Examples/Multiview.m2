@@ -114,7 +114,7 @@ EE = 1;
 dimPPWorld = 3;
 curve = (s, t) -> for i to dimPPWorld+1 list sum for i to EE list random(1,100) * s^i * t^(EE-i);
 for dimPPImage from 2 to 3 do for nn from 1 to 2 do (
-    print("For n = "|nn|" and h = "|dimPPImage|", and f a curve");
+    print("For n = "|nn|" and h = "|dimPPImage|", and f a curve of degree E = "|EE);
     theoremEDRationalCurve(nn, dimPPImage, curve)
 )
 
@@ -125,7 +125,7 @@ surface = (s, t, u) -> for i to dimPPWorld+1 list (
     sum for j from 0 to EE list sum for k from 0 to EE-j list random(1,100) * s^j * t^k * u^(EE-j-k)
 )
 
-for dimPPImage from 2 to 4 do for nn from 2 to 2 do (
-    print("For n = "|nn|" and h = "|dimPPImage|", and f a surface");
+for dimPPImage from 2 to 4 do for nn from 2 to 3 do (
+    print("For n = "|nn|" and h = "|dimPPImage|", and f a surface of degree E = "|EE);
     theoremEDRationalSurface(nn, dimPPImage, surface)
 )

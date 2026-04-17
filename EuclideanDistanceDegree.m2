@@ -1,5 +1,3 @@
--- TODO: if parameteryHomotopy works, check that we get the same answer as EDHomotopy, but it's probably faster
-
 newPackage(
   "EuclideanDistanceDegree",
   Version => "1.1", 
@@ -423,10 +421,10 @@ doc /// --numeric
       homotopy methods. Finer control over the homotopy is accomplished using the `homotopyEDDegree` method by modifying the
       @TO NumericalComputationOptions@ object.
     Text
-      By default, this method creates a temporary directory to store the input files. A specific directory can be specified as a string 
-      using the `TempDirectory` option, a directory will be created if it does not exist. The `numericUnitEDDegree` method computes an 
-      ED degree using random (complex) data and unit weights, whereas `numericGenericEDDegree` will use random data and random weights.
-      The `homotopyEDDegree` method uses the directory defined in the @TO NumericalComputationOptions@ object.
+      By default, all methods except `homotopyEDDegree` will create a temporary directory to store the input files. A specific directory can
+      be specified as a string using the `TempDirectory` option, a directory will be created if it does not exist. For `homotopyEDDegree`, a
+      temp directory can be specified on the @TO NumericalComputationOptions@ object. The `numericUnitEDDegree` method computes an ED degree
+      using random (complex) data and unit weights, whereas `numericGenericEDDegree` will use random data and random weights.
     Example
       R = QQ[x,y]
       F = G = {x^2+y^2-1}
@@ -444,18 +442,20 @@ doc /// --numeric
       WS = {.7, 1.2}
       GED = numericWeightEDDegree(F, G, U, WS, TempDirectory => dir)
       UED = numericWeightEDDegree(F, G, U, W1, TempDirectory => dir)
+  Caveat
+    Inaccurate results may be returned if V(F) is contained in V(L)
 ///
 
 doc /// --average
   Key
     averageNumericEDDegree
-    (averageNumericEDDegree, List, List, ZZ)
-    (averageNumericEDDegree, List, List, List, ZZ)
+    (averageNumericEDDegree, List, FunctionClosure, ZZ)
+    (averageNumericEDDegree, List, ZZ)
   Headline
     compute average ED degrees using sampled data
   Usage
-    GED = averageNumericEDDegree(F, G, 10)
-    GED = averageNumericEDDegree(F, G, L, 10)
+    aED = averageNumericEDDegree({F, G, L}, 10)
+    aED = averageNumericEDDegree({F, G}, sampleGen, 10)
   Inputs
     F: List
       list of polynomials
@@ -468,16 +468,19 @@ doc /// --average
     n: ZZ
       number of samples to take
   Outputs
-    ED: ZZ
+    aED: RR
       average ED degree after n trials
   Description
     Text
-      Generates a sample using the given function and uses homotopy continuation to find critical points. The average number of real critical
-      points is returned. 
+      Generate data samples using the given function and uses homotopy continuation to find critical points of the distance function. The
+      average number of real critical points after $n$ trials is returned. This method creates a @TO NumericalComputationOptions@ object and 
+      computes critical points using the @TO homotopyEDDegree@ method. The tempory directory from which Bertini is ran can be specified using
+      the `TempDirectory` option. By default, random(RR) is used to generate data samples.
     Example
       R = QQ[x,y]
       F = G = {x^2 + y^2 - 1}
-      ED = averageNumericEDDegree(F, G, 10)
+      sampleGen = () -> apply(#gens R, i -> random(RR))
+      aED = averageNumericEDDegree({F, G}, sampleGen, 10)
 ///
 
 -*
@@ -560,7 +563,9 @@ TEST /// -- basic examples
 ///
 
 -- https://homepage.univie.ac.at/herwig.hauser/bildergalerie/gallery.html 
-TEST ///  -- Herwig Hauser's algebraic surfaces gallery
+-- TODO: choose 10 surfaces
+TEST ///  -- Selected surfaces from Herwig Hauser's algebraic surfaces gallery
+  setRandomSeed(123456);
   R = QQ[x,y,z];
   surfaces = {
     x^2 + y^2*z^3 - z^4,
@@ -621,7 +626,23 @@ TEST ///  -- PNN function space
   assert(leftKernelGenericEDDegree(G) === numericGenericEDDegree(G, G));
 ///
 
-TEST ///  -- self-attention network function space
+TEST ///  -- parameterization test
+  setRandomSeed(123456);
+  n = 4;
+  numX = 2;
+  R = QQ[x_1..x_numX];
+  F = for i to 3 list x_1^2 + random(1,10) * x_1 + random(1,10) * x_2^i;
+  GED_param = parameterizedGenericEDDegree F;
+
+  S = QQ[gens R] ** QQ[y_1..y_(n-numX), u_1..u_n];
+  M = sub(matrix{F}, S);
+  imageModel = eliminate(support M, ideal(M - matrix{for i from 1 to n list u_i}));
+  GED_implicit = determinantalUnitEDDegree((sub(imageModel, QQ[support imageModel]))_*);
+  assert(GED_param === GED_implicit);
+///
+
+-*
+TEST ///  -- lightning self-attention network function space
   d = (1,2);
   l = #d - 1;
   t = 2;
@@ -659,11 +680,6 @@ TEST ///  -- self-attention network function space
   G = apply(c, i -> sum apply(#F, j -> (random(QQ) * F_j)));
   assert(leftKernelUnitEDDegree(G) === numericUnitEDDegree(F, F));
   assert(leftKernelGenericEDDegree(G) === numericGenericEDDegree(F, F));
-///
-
--*
-TEST ///
---load concatenate(MultiprojectiveWitnessSets#"source directory","./AEO/TST/Example1.tst.m2")
 ///
 *-
 
