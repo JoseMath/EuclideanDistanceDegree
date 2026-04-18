@@ -315,7 +315,6 @@ Unused keys, maybe for a later version?
   `BertiniMembershipTestConfiguration`
   `BertiniSubstitute`
   `BertiniConstants`
-  `BertiniStartFiberSolveConfiguration`
   `TrackSolutions`
   `StartSubmodel`
       `HomogeneousVariableGroups` and `AffineVariableGroups` to modify variable groups. By default the variables of `ring F` are treated
@@ -367,6 +366,8 @@ doc ///  -- NumericalComputationOptions
       Keys are also available to customize the Bertini run: 
       `FinerRestriction` a list of polynomials to filter down critical points. Critical points will only be kept if they vanish
       for every polynomial in this list. 
+      `BertiniStartFiberSolveConfiguration` a list of options (e.g. `FinalTol -> 1e-8`) that will be passed into the Berni inputs file. By
+      default, the options {"TrackType"=>0, "PrintPathProgress"=>1000} are included.
     Example
       R = QQ[x,y]
       F = G = {x^2 + y^2 - 1}
@@ -467,6 +468,8 @@ doc /// --average
       a function which generates data samples
     n: ZZ
       number of samples to take
+    Tolerance: RR
+      tolerance for identifying real critical points
   Outputs
     aED: RR
       average ED degree after n trials
@@ -475,7 +478,8 @@ doc /// --average
       Generate data samples using the given function and uses homotopy continuation to find critical points of the distance function. The
       average number of real critical points after $n$ trials is returned. This method creates a @TO NumericalComputationOptions@ object and 
       computes critical points using the @TO homotopyEDDegree@ method. The tempory directory from which Bertini is ran can be specified using
-      the `TempDirectory` option. By default, random(RR) is used to generate data samples.
+      the `TempDirectory` option. By default, random(RR) is used to generate data samples. A point is considered real if its imaginary
+      part has magnitude less than a tolerance. By default this is 1e-4, but can be changed via the `Tolerance` option.
     Example
       R = QQ[x,y]
       F = G = {x^2 + y^2 - 1}
