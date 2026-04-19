@@ -1,9 +1,7 @@
--- TODO: if parameteryHomotopy works, check that we get the same answer as EDHomotopy, but it's probably faster
-
 newPackage(
   "EuclideanDistanceDegree",
   Version => "1.1", 
-  Date => "Feb 2026",
+  Date => "April 2026",
   Authors => {
     {Name => "Jose Israel Rodriguez",
     Email => "Jose@Math.wisc.edu",
@@ -39,6 +37,7 @@ randomVector(ZZ,Thing):= o->(n,R) ->apply(n,i->randomValue(R))--list of length n
 load"./EDD_Determinantal.m2"
 load"./EDD_LeftKernel.m2"
 load"./EDD_Numerical.m2"
+load"./EDD_Parameterization.m2"
 
 export {
   "TempDirectory",
@@ -56,7 +55,11 @@ export {
   "numericWeightEDDegree",
   "numericGenericEDDegree",
   "numericUnitEDDegree",
-  "vanishTally"
+  "parameterizedWeightEDDegree",
+  "parameterizedGenericEDDegree",
+  "parameterizedUnitEDDegree",
+  "averageNumericEDDegree"
+  -- "vanishTally"
 }
 
 ----------------------------------------------------------------------------------------------------------------
@@ -74,7 +77,7 @@ addSlash = (aString) -> (
   aString
 );
 makeJac = (system,unknowns) -> (
-  --it is a list of lists of partial derivatives of a polynomial
+  -- it is a list of lists of partial derivatives of a polynomial
   for i in system list for j in unknowns list diff(j,i)
 )
 checkZero = (aSol, eps) -> if aSol/abs//min < eps then false else true
@@ -172,7 +175,7 @@ doc /// --EuclideanDistanceDegree Package
       importSolutionsFile(NCO#"Directory", NameSolutionsFile => "member_points")	
 ///
 
-doc /// --symbolicWeightEDDegree
+doc /// --symbolic
   Key
     symbolicWeightEDDegree
     (symbolicWeightEDDegree, List, List, List)
@@ -217,6 +220,47 @@ doc /// --symbolicWeightEDDegree
       UED = determinantalUnitEDDegree F
       GED = determinantalGenericEDDegree F
       ICP = symbolicWeightEDDegree(F, U, W, ReturnCriticalIdeal => true)
+///
+
+doc /// --parameterized
+  Key
+    parameterizedWeightEDDegree
+    (parameterizedWeightEDDegree, List, List, List)
+    parameterizedUnitEDDegree
+    (parameterizedUnitEDDegree, List)
+    parameterizedGenericEDDegree
+    (parameterizedGenericEDDegree, List)
+  Headline
+    compute Euclidean distance degrees of parameterized varieties symbolically using conormal varieties
+  Usage
+    UED = parameterizedUnitEDDegree(F)
+    GED = parameterizedGenericEDDegree(F)
+    GED = parameterizedWeightEDDegree(F, U, W)
+  Inputs
+    F:List
+      a system of polynomials in $d$ variables parameterizing a $d$-dimensional variety 
+    U:List
+      a (generic) data vector 
+    W:List
+      a (generic) weight vector
+  Outputs
+    GED:ZZ
+      a generic Euclidean distance degree
+    UED:ZZ
+      a unit Euclidean distance degree
+  Description
+    Text
+      This method computes Euclidean distance (ED) degrees for the variety parameterized by the a set of polynomials $F$ in $d$ variables. If
+      the resulting variety is $d$-dimensional, then by finding a global description for the kernel of the Jacobian map, the critical
+      equations of the variety can be computed. The `parameterizedUnitEDDegree` method computes an ED degree using random (integer) data an
+      unit weights, whereas `parameterizedGenericEDDegree` will use random data and random weights.
+    Example
+      R = QQ[x,y]
+      F = {x^2 + 1, x * y, y - 1}
+      (U,W) = ({12, 23, 25}, {15, 331, 1})
+      UED = parameterizedUnitEDDegree F
+      GED = parameterizedGenericEDDegree F
+      GED = parameterizedWeightEDDegree(F, U, W)
 ///
 
 doc /// --leftKernel
@@ -265,14 +309,18 @@ doc /// --leftKernel
       UED = leftKernelUnitEDDegree F
 ///
 
--- Unused keys, maybe for a later version?
---   `OutputType` one of "Standard" or "TestHomotopyConjectureGEDvUED"
---   `BertiniMembershipTestConfiguration`
---   `BertiniSubstitute`
---   `BertiniConstants`
---   `BertiniStartFiberSolveConfiguration`
---   `TrackSolutions`
-doc ///
+-*
+Unused keys, maybe for a later version?
+  `OutputType` one of "Standard" or "TestHomotopyConjectureGEDvUED"
+  `BertiniMembershipTestConfiguration`
+  `BertiniSubstitute`
+  `BertiniConstants`
+  `TrackSolutions`
+  `StartSubmodel`
+      `HomogeneousVariableGroups` and `AffineVariableGroups` to modify variable groups. By default the variables of `ring F` are treated
+      as Homogeneous. 
+*-
+doc ///  -- NumericalComputationOptions
   Key
     NumericalComputationOptions
     newNumericalComputationOptions
@@ -293,9 +341,9 @@ doc ///
     F:List
       a system of polynomials (need not be square) defining the variety
     G:List
-      a system of polynomials (complete intersection) such that V(F) is an irreducible component of V(G).
+      a system of polynomials (complete intersection) such that V(F) is an irreducible component of V(G), i.e. a witness model
     L:List
-      a system of linear polynomials
+      a system of linear polynomials, i.e. a submodel
   Outputs
     NCO:NumericalComputationOptions
       a MutableHashTable to keeps track of the options and configurations for the homotopy methods
@@ -308,18 +356,18 @@ doc ///
       if it does not exist.
     Text
       Keys available to customize the homotopy include: 
-      `Directory` to change the directory Bertini is run from, the directory need not exist.
+      `Directory` to change the directory Bertini is run from, the directory need not exist. 
       `StartData` and `TargetData` if executing a Data homotopy, defaults to random complex data. 
       `StartWeight` and `TargetWeight` if executing a Weight homotopy, defaults to random complex and unit weights respectively. 
-      `Infinity` to add a hyperplane at infinity, one is create by default in @TO homotopyEDDegree@ if not present. 
+      `Infinity` to add a hyperplane at infinity for homogenization, one is create by default in @TO homotopyEDDegree@ if not present. 
       `PrimalCoordinates` to add additional variables to the ambient space. By default this field will already contain the variables of 
-      `ring F`, thus it is safer to append extra variables rather than overwriting the less, otherwise subsequence methods may fail. 
+      `ring F`, thus it is safer to append extra variables rather than overwriting the less, otherwise subsequent methods may fail. 
     Text
       Keys are also available to customize the Bertini run: 
-      `HomogeneousVariableGroups` and `AffineVariableGroups` to modify variable groups. By default the variables of `ring F` are treated
-      as Homogeneous. 
       `FinerRestriction` a list of polynomials to filter down critical points. Critical points will only be kept if they vanish
-      for every polynomial in this list.
+      for every polynomial in this list. 
+      `BertiniStartFiberSolveConfiguration` a list of options (e.g. `FinalTol -> 1e-8`) that will be passed into the Berni inputs file. By
+      default, the options {"TrackType"=>0, "PrintPathProgress"=>1000} are included.
     Example
       R = QQ[x,y]
       F = G = {x^2 + y^2 - 1}
@@ -349,19 +397,19 @@ doc /// --numeric
     F:List
       a system of polynomials (need not be square) defining the variety
     G:List
-      a system of polynomials (complete intersection) such that V(F) is an irreducible component of V(G).
+      a system of polynomials (complete intersection) such that V(F) is an irreducible component of V(G), i.e. a witness model
     L:List
-      a system of linear polynomials
+      a system of linear polynomials, i.e. a submodel
     U:List
       a (generic) data vector
     W:List
       a (generic) weight vector
     ht:String
-      one of "Weight", "Data", or "Submodel" which defines the type of homotopy to execute
+      one of "Weight" or "Data" which defines the type of homotopy to execute
     isStageOne:Boolean
-      indicates the stage of the homotopy continuation
+      if set, runs stage 1 to solve the start system
     isStageTwo:Boolean
-      indicates the stage of the homotop continuation
+      if set, runs stage 2 to solve the target system via path tracking
   Outputs
     GED:ZZ
       a generic Euclidean distance degree
@@ -369,15 +417,15 @@ doc /// --numeric
       a unit Euclidean distance degree
   Description
     Text
-      Uses a weight homotopy by default, though data and submodel homotopies are available. The Bertini input files are written in dir
+      Uses a weight homotopy by default, though data homotopy is also available. The Bertini input files are written in dir
       and then Bertini is ran. The `numericWeightEDDegree`, `numericUnitEDDegree`, and `numericGenericEDDegree` methods are all weight
       homotopy methods. Finer control over the homotopy is accomplished using the `homotopyEDDegree` method by modifying the
       @TO NumericalComputationOptions@ object.
     Text
-      By default, this method creates a temporary directory to store the input files. A specific directory can be specified as a string 
-      using the `TempDirectory` option, a directory will be created if it does not exist. The `numericUnitEDDegree` method computes an 
-      ED degree using random (complex) data and unit weights, whereas `numericGenericEDDegree` will use random data and random weights.
-      The `homotopyEDDegree` method uses the directory defined in the @TO NumericalComputationOptions@ object.
+      By default, all methods except `homotopyEDDegree` will create a temporary directory to store the input files. A specific directory can
+      be specified as a string using the `TempDirectory` option, a directory will be created if it does not exist. For `homotopyEDDegree`, a
+      temp directory can be specified on the @TO NumericalComputationOptions@ object. The `numericUnitEDDegree` method computes an ED degree
+      using random (complex) data and unit weights, whereas `numericGenericEDDegree` will use random data and random weights.
     Example
       R = QQ[x,y]
       F = G = {x^2+y^2-1}
@@ -395,8 +443,51 @@ doc /// --numeric
       WS = {.7, 1.2}
       GED = numericWeightEDDegree(F, G, U, WS, TempDirectory => dir)
       UED = numericWeightEDDegree(F, G, U, W1, TempDirectory => dir)
+  Caveat
+    Inaccurate results may be returned if V(F) is contained in V(L)
 ///
 
+doc /// --average
+  Key
+    averageNumericEDDegree
+    (averageNumericEDDegree, List, FunctionClosure, ZZ)
+    (averageNumericEDDegree, List, ZZ)
+  Headline
+    compute average ED degrees using sampled data
+  Usage
+    aED = averageNumericEDDegree({F, G, L}, 10)
+    aED = averageNumericEDDegree({F, G}, sampleGen, 10)
+  Inputs
+    F: List
+      list of polynomials
+    G: List
+      list of polynomials (complete intersection) such that V(F) is an irreducible component of V(G), i.e. a witness model
+    L: List
+      list of linear polynomials, i.e. a submodel
+    SampleGenerator: FunctionClosure
+      a function which generates data samples
+    n: ZZ
+      number of samples to take
+    Tolerance: RR
+      tolerance for identifying real critical points
+  Outputs
+    aED: RR
+      average ED degree after n trials
+  Description
+    Text
+      Generate data samples using the given function and uses homotopy continuation to find critical points of the distance function. The
+      average number of real critical points after $n$ trials is returned. This method creates a @TO NumericalComputationOptions@ object and 
+      computes critical points using the @TO homotopyEDDegree@ method. The tempory directory from which Bertini is ran can be specified using
+      the `TempDirectory` option. By default, random(RR) is used to generate data samples. A point is considered real if its imaginary
+      part has magnitude less than a tolerance. By default this is 1e-4, but can be changed via the `Tolerance` option.
+    Example
+      R = QQ[x,y]
+      F = G = {x^2 + y^2 - 1}
+      sampleGen = () -> apply(#gens R, i -> random(RR))
+      aED = averageNumericEDDegree({F, G}, sampleGen, 10)
+///
+
+-*
 doc /// --vanishTally
   Key
     vanishTally
@@ -431,8 +522,9 @@ doc /// --vanishTally
       GED = homotopyEDDegree(NCO, "Weight", true, true)
       vanishTally(NCO, F)
   Caveat
-    This method assumes that a Bertini run was completed in the directory specified by NCO.
+    This method assumes that a stage 2 homotopy was completed in the directory specified by NCO.
 ///
+*-
 
 --##########################################################################--
 -- END DOCUMENTATION
@@ -474,11 +566,10 @@ TEST /// -- basic examples
   assert(numericUnitEDDegree(F, G) === 2);
 ///
 
--- TODO: add remaining surfaces (73 total)
--- TODO: random seed issues?
--- https://homepage.univie.ac.at/herwig.hauser/bildergalerie/gallery.html (check all 3 give the same result)
--- https://www.imaginary.org/gallery/herwig-hauser-classic
-TEST ///  -- Herwig Hauser's algebraic surfaces gallery
+-- https://homepage.univie.ac.at/herwig.hauser/bildergalerie/gallery.html 
+-- TODO: choose 10 surfaces
+TEST ///  -- Selected surfaces from Herwig Hauser's algebraic surfaces gallery
+  setRandomSeed(123456);
   R = QQ[x,y,z];
   surfaces = {
     x^2 + y^2*z^3 - z^4,
@@ -497,6 +588,7 @@ TEST ///  -- Herwig Hauser's algebraic surfaces gallery
     UED_symb = determinantalUnitEDDegree F;
     GED_symb = determinantalGenericEDDegree F;
     UED_left = leftKernelUnitEDDegree F;
+
     GED_left = leftKernelGenericEDDegree F;
     UED_numeric = numericUnitEDDegree(F, F);
     GED_numeric = numericGenericEDDegree(F, F);
@@ -512,66 +604,73 @@ TEST ///  -- PNN function space
   d = (3,1,1);
   r = 2;
 
-  -- Parameter space: weights
   R = QQ[W_0..W_(d_1 * d_0), V_0..V_(d_2 * d_1)];
   W = genericMatrix(R, W_0, d_1, d_0);
   V = genericMatrix(R, V_0, d_2, d_1);
 
-  -- Function space
   T = R[x_0..x_(d_0 - 1)];
-  X = transpose matrix{apply(d_0, i -> x_i)};  -- input
+  X = transpose matrix{apply(d_0, i -> x_i)};
   Z = W * X;
   A = matrix table(d_1, 1, (i, j) -> (Z_(i,j))^r);
-  Phi = V * A;  -- output function
+  Phi = V * A;
 
-  -- Create the ambient space (space of symmetric tensors)
-  mons = flatten entries basis(r, T);  -- homogeneous monomials of degree r
+  mons = flatten entries basis(r, T);
   S = QQ[c_0..c_(d_2 * #mons - 1)];
-
-  -- Get image of the parameterization map
   im = flatten apply(d_2, i -> (
     f = Phi_(i,0);
     apply(mons, m -> coefficient(m, f))
   ));
 
-  -- Get the defining ideal
   paramMap = map(R, S, im);
   I = kernel paramMap;
+  F = flatten entries gens I;
   c = codim I;
-
-  -- Prune variety down to a complete intersection
-  gensI = flatten entries gens I;
-  F = apply(c, i -> sum apply(#gensI, j -> (random(QQ) * gensI_j)));
-  assert(leftKernelUnitEDDegree(F) === numericUnitEDDegree(F, F));
-  assert(leftKernelGenericEDDegree(F) === numericGenericEDDegree(F, F));
+  G = apply(c, i -> sum apply(#F, j -> (random(QQ) * F_j)));
+  assert(leftKernelUnitEDDegree(G) === numericUnitEDDegree(G, G));
+  assert(leftKernelGenericEDDegree(G) === numericGenericEDDegree(G, G));
 ///
 
-TEST ///  -- self-attention network function space
-  d = (1,2,1);
+TEST ///  -- parameterization test
+  setRandomSeed(123456);
+  n = 4;
+  numX = 2;
+  R = QQ[x_1..x_numX];
+  F = for i to 3 list x_1^2 + random(1,10) * x_1 + random(1,10) * x_2^i;
+  GED_param = parameterizedGenericEDDegree F;
+
+  S = QQ[gens R] ** QQ[y_1..y_(n-numX), u_1..u_n];
+  M = sub(matrix{F}, S);
+  imageModel = eliminate(support M, ideal(M - matrix{for i from 1 to n list u_i}));
+  GED_implicit = determinantalUnitEDDegree((sub(imageModel, QQ[support imageModel]))_*);
+  assert(GED_param === GED_implicit);
+///
+
+-*
+TEST ///  -- lightning self-attention network function space
+  d = (1,2);
   l = #d - 1;
-  t = 1;
+  t = 2;
   
   -- Parameter space: weights
-  ARing = QQ[A_0..A_(d_0 * d_0), B_0..B_(d_1 * d_1)];  -- ring for attention matrices
-  VRing = QQ[V_0..V_(d_1 * d_0), W_0..W_(d_2 * d_1)];  -- ring for value matrices
+  ARing = QQ[A_0..A_(d_0 * d_0)];  -- ring for attention matrices
+  VRing = QQ[V_0..V_(d_1 * d_0)];  -- ring for value matrices
   R = ARing ** VRing;
 
-  As = (genericMatrix(R, A_0, d_0, d_0), genericMatrix(R, B_0, d_1, d_1));
-  Vs = (genericMatrix(R, V_0, d_1, d_0), genericMatrix(R, W_0, d_2, d_1));
+  A = genericMatrix(R, A_0, d_0, d_0);
+  V = genericMatrix(R, V_0, d_1, d_0);
 
   -- Function space
   T = R[x_0..x_(d_0 * t)];
   X = genericMatrix(T, x_0, d_0, t);  -- input
-  X = Vs_0 * X * transpose X * As_0 * X;
-  Phi = Vs_1 * X * transpose X * As_1 * X;  -- output
+  Phi = V * X * transpose X * A * X; -- output
 
   -- Create the ambient space (space of symmetric tensors)
   mons = flatten entries basis(3^l, T);  -- homogeneous monomials of degree 3^l
-  S = QQ[c_0..c_(d_2 * t * #mons - 1)];
+  S = QQ[c_0..c_(d_1 * t * #mons - 1)];
 
   -- Get image of the parameterization map
   PhiFlat = flatten entries Phi;
-  im = flatten apply(d_2 * t, i -> (
+  im = flatten apply(d_1 * t, i -> (
     f = PhiFlat_i;
     apply(mons, m -> coefficient(m, f))
   ));
@@ -581,15 +680,10 @@ TEST ///  -- self-attention network function space
   I = kernel paramMap;
   c = codim I;
 
-  gensI = flatten entries gens I;
-  F = apply(c, i -> sum apply(#gensI, j -> (random(QQ) * gensI_j)));
-  assert(leftKernelUnitEDDegree(F) === numericUnitEDDegree(F, F));
-  assert(leftKernelGenericEDDegree(F) === numericGenericEDDegree(F, F));
-///
-
--*
-TEST ///
---load concatenate(MultiprojectiveWitnessSets#"source directory","./AEO/TST/Example1.tst.m2")
+  F = flatten entries gens I;
+  G = apply(c, i -> sum apply(#F, j -> (random(QQ) * F_j)));
+  assert(leftKernelUnitEDDegree(G) === numericUnitEDDegree(F, F));
+  assert(leftKernelGenericEDDegree(G) === numericGenericEDDegree(F, F));
 ///
 *-
 
