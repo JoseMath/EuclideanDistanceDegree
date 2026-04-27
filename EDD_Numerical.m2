@@ -702,7 +702,7 @@ end
 
 loadPackage "EuclideanDistanceDegree"
 loadPackage "Probability"
-n = 10;
+n = 100;
 R = QQ[x,y];
 F = G = {x^2 + 4*y^2 - 4};
 Z = normalDistribution();

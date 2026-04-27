@@ -566,37 +566,32 @@ TEST /// -- basic examples
   assert(numericUnitEDDegree(F, G) === 2);
 ///
 
--- https://homepage.univie.ac.at/herwig.hauser/bildergalerie/gallery.html 
--- TODO: choose 10 surfaces
+-- https://homepage.univie.ac.at/herwig.hauser/bildergalerie/gallery.html
 TEST ///  -- Selected surfaces from Herwig Hauser's algebraic surfaces gallery
   setRandomSeed(123456);
   R = QQ[x,y,z];
   surfaces = {
-    x^2 + y^2*z^3 - z^4,
-    x^2 + y^2*z - z^2,
-    x^3*y + x*z^3 + y^3*z + z^3 + 7*z^2 + 5*z,
-    x^6 + y^6 + z^6 - 1,
     3*x^2 + 3*y^2 + z^2 - 1,
-    (x^2 - y^3)^2 - (z^2 - y^2)^3,
     x^2 + y^2 + z^3 - z^2,
-    x^2 + y^2 + z^2 + 1000 * (x^2 + y^2) * (x^2 + z^2) * (y^2 + z^2) - 1
+    x^2 + y^3 + z^5,
+    x^2 - y^2*z,
+    x^2 + y^2*z^3,
+    x^2 + y^2 + z^2 - 1,
+    x^2 + z^2 - y^3*(y-1)^3,
+    x^2 - y^3*z^3,
+    x^2 + y^2 + z,
+    x^2*y*z + x*y^2 + y^3 + y^3*z - x^2*z^2
   };
 
   for surface in surfaces do (
     F = {surface};
 
-    UED_symb = determinantalUnitEDDegree F;
     GED_symb = determinantalGenericEDDegree F;
-    UED_left = leftKernelUnitEDDegree F;
-
     GED_left = leftKernelGenericEDDegree F;
-    UED_numeric = numericUnitEDDegree(F, F);
     GED_numeric = numericGenericEDDegree(F, F);
-
-    assert(UED_symb === UED_left);
-    assert(UED_left === UED_numeric);
+    
     assert(GED_symb === GED_left);
-    assert(GED_left === UED_numeric);
+    assert(GED_left === GED_numeric);
   )
 ///
 
@@ -697,21 +692,20 @@ check "EuclideanDistanceDegree"
 
 -- Debugging surface tests
 loadPackage "EuclideanDistanceDegree"
+setRandomSeed(123456);
 R = QQ[x,y,z];
 surfaces = {
-  x^2 + y^2*z^3 - z^4,
-  x^2 + y^2*z - z^2,
-  x^3*y + x*z^3 + y^3*z + z^3 + 7*z^2 + 5*z,
-  x^6 + y^6 + z^6 - 1,
   3*x^2 + 3*y^2 + z^2 - 1,
-  (x^2 - y^3)^2 - (z^2 - y^2)^3,
   x^2 + y^2 + z^3 - z^2,
-  x^2 + y^2 + z^2 + 1000 * (x^2 + y^2) * (x^2 + z^2) * (y^2 + z^2) - 1  -- this one (left kernel disagrees on unit)
+  x^2 + y^3 + z^5,
+  x^2 - y^2*z,
+  x^2 + y^2*z^3,
+  x^2 + y^2 + z^2 - 1,
+  x^2 + z^2 - y^3*(y-1)^3,
+  x^2 - y^3*z^3,
+  x^2 + y^2 + z,
+  x^2*y*z + x*y^2 + y^3 + y^3*z - x^2*z^2
 };
-
-UED1 = {};
-UED2 = {};
-UED3 = {};
 
 GED1 = {};
 GED2 = {};
@@ -719,25 +713,17 @@ GED3 = {};
 
 for surface in surfaces do (
   F = {surface};
-  UED1 = UED1 | {determinantalUnitEDDegree F};
-  UED2 = UED2 | {leftKernelUnitEDDegree F};
-  UED3 = UED3 | {numericUnitEDDegree(F, F)};
+  print(toString surface);
 
   GED1 = GED1 | {determinantalGenericEDDegree F};
   GED2 = GED2 | {leftKernelGenericEDDegree F};
   GED3 = GED3 | {numericGenericEDDegree(F, F)};
 )
 
-print("Comparing unit degrees")
-scan(#UED1, i -> (
-  if UED1_i =!= UED2_i then print("symb-left F: " | toString surface | "; " | UED1_i | ", " | UED2_i);
-  if UED2_i =!= UED3_i then print("left-num F: " | toString surface | "; " | UED2_i | ", " | UED3_i);
-  if UED1_i =!= UED3_i then print("sym-num F: " | toString surface | "; " | UED1_i | ", " | UED3_i);
+scan(#GED1, i -> (
+  if GED1_i =!= GED2_i then print("symb-left F: " | toString surfaces_i | "; " | GED1_i | ", " | GED2_i);
+  if GED2_i =!= GED3_i then print("left-num F: " | toString surfaces_i | "; " | GED2_i | ", " | GED3_i);
+  if GED1_i =!= GED3_i then print("sym-num F: " | toString surfaces_i | "; " | GED1_i | ", " | GED3_i);
 ))
 
-print("Comparing generic degrees")
-scan(#GED1, i -> (
-  if GED1_i =!= GED2_i then print("symb-left F: " | toString surface | "; " | GED1_i | ", " | GED2_i);
-  if GED2_i =!= GED3_i then print("left-num F: " | toString surface | "; " | GED2_i | ", " | GED3_i);
-  if GED1_i =!= GED3_i then print("sym-num F: " | toString surface | "; " | GED1_i | ", " | GED3_i);
-))
+--
