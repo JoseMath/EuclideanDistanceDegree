@@ -1,5 +1,3 @@
--- TODO: if parameteryHomotopy works, check that we get the same answer as EDHomotopy, but it's probably faster
-
 newPackage(
   "EuclideanDistanceDegree",
   Version => "1.1", 
@@ -16,7 +14,7 @@ newPackage(
   --DebuggingMode => false, -- turn off for release builds
   DebuggingMode => true,
   AuxiliaryFiles => false,
-  PackageImports => {"SimpleDoc","Bertini","NumericalAlgebraicGeometry","Elimination"},
+  PackageImports => {"SimpleDoc","Bertini","NumericalAlgebraicGeometry","Elimination","MonodromySolver"},
   PackageExports => {"Bertini","NumericalAlgebraicGeometry"},
   Configuration => {
     --"RandomCoefficients"=>CC,
@@ -43,8 +41,8 @@ load"./EDD_Parameterization.m2"
 
 export {
   "TempDirectory",
-  "FileDirectory",
   "ReturnCriticalIdeal",
+  "UseMonodromy",
   "symbolicWeightEDDegree",
   "determinantalUnitEDDegree",
   "determinantalGenericEDDegree",
@@ -232,6 +230,7 @@ doc /// --parameterized
     (parameterizedUnitEDDegree, List)
     parameterizedGenericEDDegree
     (parameterizedGenericEDDegree, List)
+    UseMonodromy
   Headline
     compute Euclidean distance degrees of parameterized varieties symbolically using conormal varieties
   Usage
@@ -245,6 +244,8 @@ doc /// --parameterized
       a (generic) data vector 
     W:List
       a (generic) weight vector
+    UseMonodromy:Boolean
+      if true, then solve system using monodromy instead of Bertini
   Outputs
     GED:ZZ
       a generic Euclidean distance degree
@@ -317,7 +318,6 @@ Unused keys, maybe for a later version?
   `BertiniMembershipTestConfiguration`
   `BertiniSubstitute`
   `BertiniConstants`
-  `BertiniStartFiberSolveConfiguration`
   `TrackSolutions`
   `StartSubmodel`
       `HomogeneousVariableGroups` and `AffineVariableGroups` to modify variable groups. By default the variables of `ring F` are treated
@@ -369,6 +369,8 @@ doc ///  -- NumericalComputationOptions
       Keys are also available to customize the Bertini run: 
       `FinerRestriction` a list of polynomials to filter down critical points. Critical points will only be kept if they vanish
       for every polynomial in this list. 
+      `BertiniStartFiberSolveConfiguration` a list of options (e.g. `FinalTol -> 1e-8`) that will be passed into the Berni inputs file. By
+      default, the options {"TrackType"=>0, "PrintPathProgress"=>1000} are included.
     Example
       R = QQ[x,y]
       F = G = {x^2 + y^2 - 1}
@@ -423,10 +425,10 @@ doc /// --numeric
       homotopy methods. Finer control over the homotopy is accomplished using the `homotopyEDDegree` method by modifying the
       @TO NumericalComputationOptions@ object.
     Text
-      By default, this method creates a temporary directory to store the input files. A specific directory can be specified as a string 
-      using the `TempDirectory` option, a directory will be created if it does not exist. The `numericUnitEDDegree` method computes an 
-      ED degree using random (complex) data and unit weights, whereas `numericGenericEDDegree` will use random data and random weights.
-      The `homotopyEDDegree` method uses the directory defined in the @TO NumericalComputationOptions@ object.
+      By default, all methods except `homotopyEDDegree` will create a temporary directory to store the input files. A specific directory can
+      be specified as a string using the `TempDirectory` option, a directory will be created if it does not exist. For `homotopyEDDegree`, a
+      temp directory can be specified on the @TO NumericalComputationOptions@ object. The `numericUnitEDDegree` method computes an ED degree
+      using random (complex) data and unit weights, whereas `numericGenericEDDegree` will use random data and random weights.
     Example
       R = QQ[x,y]
       F = G = {x^2+y^2-1}
@@ -444,18 +446,20 @@ doc /// --numeric
       WS = {.7, 1.2}
       GED = numericWeightEDDegree(F, G, U, WS, TempDirectory => dir)
       UED = numericWeightEDDegree(F, G, U, W1, TempDirectory => dir)
+  Caveat
+    Inaccurate results may be returned if V(F) is contained in V(L)
 ///
 
 doc /// --average
   Key
     averageNumericEDDegree
-    (averageNumericEDDegree, List, List, ZZ)
-    (averageNumericEDDegree, List, List, List, ZZ)
+    (averageNumericEDDegree, List, FunctionClosure, ZZ)
+    (averageNumericEDDegree, List, ZZ)
   Headline
     compute average ED degrees using sampled data
   Usage
-    GED = averageNumericEDDegree(F, G, 10)
-    GED = averageNumericEDDegree(F, G, L, 10)
+    aED = averageNumericEDDegree({F, G, L}, 10)
+    aED = averageNumericEDDegree({F, G}, sampleGen, 10)
   Inputs
     F: List
       list of polynomials
@@ -467,17 +471,23 @@ doc /// --average
       a function which generates data samples
     n: ZZ
       number of samples to take
+    Tolerance: RR
+      tolerance for identifying real critical points
   Outputs
-    ED: ZZ
+    aED: RR
       average ED degree after n trials
   Description
     Text
-      Generates a sample using the given function and uses homotopy continuation to find critical points. The average number of real critical
-      points is returned. 
+      Generate data samples using the given function and uses homotopy continuation to find critical points of the distance function. The
+      average number of real critical points after $n$ trials is returned. This method creates a @TO NumericalComputationOptions@ object and 
+      computes critical points using the @TO homotopyEDDegree@ method. The tempory directory from which Bertini is ran can be specified using
+      the `TempDirectory` option. By default, random(RR) is used to generate data samples. A point is considered real if its imaginary
+      part has magnitude less than a tolerance. By default this is 1e-4, but can be changed via the `Tolerance` option.
     Example
       R = QQ[x,y]
       F = G = {x^2 + y^2 - 1}
-      ED = averageNumericEDDegree(F, G, 10)
+      sampleGen = () -> apply(#gens R, i -> random(RR))
+      aED = averageNumericEDDegree({F, G}, sampleGen, 10)
 ///
 
 -*
@@ -559,35 +569,32 @@ TEST /// -- basic examples
   assert(numericUnitEDDegree(F, G) === 2);
 ///
 
--- https://homepage.univie.ac.at/herwig.hauser/bildergalerie/gallery.html 
-TEST ///  -- Herwig Hauser's algebraic surfaces gallery
+-- https://homepage.univie.ac.at/herwig.hauser/bildergalerie/gallery.html
+TEST ///  -- Selected surfaces from Herwig Hauser's algebraic surfaces gallery
+  setRandomSeed(123456);
   R = QQ[x,y,z];
   surfaces = {
-    x^2 + y^2*z^3 - z^4,
-    x^2 + y^2*z - z^2,
-    x^3*y + x*z^3 + y^3*z + z^3 + 7*z^2 + 5*z,
-    x^6 + y^6 + z^6 - 1,
     3*x^2 + 3*y^2 + z^2 - 1,
-    (x^2 - y^3)^2 - (z^2 - y^2)^3,
     x^2 + y^2 + z^3 - z^2,
-    x^2 + y^2 + z^2 + 1000 * (x^2 + y^2) * (x^2 + z^2) * (y^2 + z^2) - 1
+    x^2 + y^3 + z^5,
+    x^2 - y^2*z,
+    x^2 + y^2*z^3,
+    x^2 + y^2 + z^2 - 1,
+    x^2 + z^2 - y^3*(y-1)^3,
+    x^2 - y^3*z^3,
+    x^2 + y^2 + z,
+    x^2*y*z + x*y^2 + y^3 + y^3*z - x^2*z^2
   };
 
   for surface in surfaces do (
     F = {surface};
 
-    UED_symb = determinantalUnitEDDegree F;
     GED_symb = determinantalGenericEDDegree F;
-    UED_left = leftKernelUnitEDDegree F;
-
     GED_left = leftKernelGenericEDDegree F;
-    UED_numeric = numericUnitEDDegree(F, F);
     GED_numeric = numericGenericEDDegree(F, F);
-
-    assert(UED_symb === UED_left);
-    assert(UED_left === UED_numeric);
+    
     assert(GED_symb === GED_left);
-    assert(GED_left === UED_numeric);
+    assert(GED_left === GED_numeric);
   )
 ///
 
@@ -621,7 +628,49 @@ TEST ///  -- PNN function space
   assert(leftKernelGenericEDDegree(G) === numericGenericEDDegree(G, G));
 ///
 
-TEST ///  -- self-attention network function space
+TEST ///  -- parameterization: basic test
+  setRandomSeed(123456);
+  R = QQ[x,y];
+  F = {x^2 + 1, x * y, y - 1};
+  GED_param = parameterizedGenericEDDegree F;
+
+  n = #F;
+  numX = #gens R;
+  S = QQ[gens R] ** QQ[y_1..y_(n-numX), u_1..u_n];
+  M = sub(matrix{F}, S);
+  imageModel = eliminate(support M, ideal(M - matrix{for i from 1 to n list u_i}));
+  GED_implicit = determinantalUnitEDDegree((sub(imageModel, QQ[support imageModel]))_*);
+  assert(GED_param === GED_implicit);
+///
+
+TEST ///  -- parameterization: spurious critical points
+  setRandomSeed(123456);
+  R = QQ[x];
+  F = {x^2 - 1, x^3 - x};
+  GED_param = parameterizedGenericEDDegree F;
+
+  n = #F;
+  numX = #gens R;
+  S = QQ[gens R] ** QQ[y_1..y_(n-numX), u_1..u_n];
+  M = sub(matrix{F}, S);
+  imageModel = eliminate(support M, ideal(M - matrix{for i from 1 to n list u_i}));
+  GED_implicit = determinantalUnitEDDegree((sub(imageModel, QQ[support imageModel]))_*);
+  assert(GED_param === GED_implicit);
+///
+
+TEST ///  -- parameterization: monodromy vs symbolic
+  setRandomSeed(123456);
+  R = QQ[x1,x2,x3,x4,x5];
+  F = {x1^2+x4^2, x2^2+x5^2, x3^2+1, x1*x2+x4*x5, x1*x3+x4, x2*x3+x5};
+  U = {1,2,3,4,5,6};
+  W = {1,1,1,1,1,1};
+  GED1 = parameterizedWeightEDDegree(F,U,W);
+  GED2 = parameterizedWeightEDDegree(F,U,W, UseMonodromy => true);
+  assert(GED1 === GED2);
+///
+
+-*
+TEST ///  -- lightning self-attention network function space
   d = (1,2);
   l = #d - 1;
   t = 2;
@@ -660,11 +709,6 @@ TEST ///  -- self-attention network function space
   assert(leftKernelUnitEDDegree(G) === numericUnitEDDegree(F, F));
   assert(leftKernelGenericEDDegree(G) === numericGenericEDDegree(F, F));
 ///
-
--*
-TEST ///
---load concatenate(MultiprojectiveWitnessSets#"source directory","./AEO/TST/Example1.tst.m2")
-///
 *-
 
 end
@@ -677,21 +721,20 @@ check "EuclideanDistanceDegree"
 
 -- Debugging surface tests
 loadPackage "EuclideanDistanceDegree"
+setRandomSeed(123456);
 R = QQ[x,y,z];
 surfaces = {
-  x^2 + y^2*z^3 - z^4,
-  x^2 + y^2*z - z^2,
-  x^3*y + x*z^3 + y^3*z + z^3 + 7*z^2 + 5*z,
-  x^6 + y^6 + z^6 - 1,
   3*x^2 + 3*y^2 + z^2 - 1,
-  (x^2 - y^3)^2 - (z^2 - y^2)^3,
   x^2 + y^2 + z^3 - z^2,
-  x^2 + y^2 + z^2 + 1000 * (x^2 + y^2) * (x^2 + z^2) * (y^2 + z^2) - 1  -- this one (left kernel disagrees on unit)
+  x^2 + y^3 + z^5,
+  x^2 - y^2*z,
+  x^2 + y^2*z^3,
+  x^2 + y^2 + z^2 - 1,
+  x^2 + z^2 - y^3*(y-1)^3,
+  x^2 - y^3*z^3,
+  x^2 + y^2 + z,
+  x^2*y*z + x*y^2 + y^3 + y^3*z - x^2*z^2
 };
-
-UED1 = {};
-UED2 = {};
-UED3 = {};
 
 GED1 = {};
 GED2 = {};
@@ -699,25 +742,17 @@ GED3 = {};
 
 for surface in surfaces do (
   F = {surface};
-  UED1 = UED1 | {determinantalUnitEDDegree F};
-  UED2 = UED2 | {leftKernelUnitEDDegree F};
-  UED3 = UED3 | {numericUnitEDDegree(F, F)};
+  print(toString surface);
 
   GED1 = GED1 | {determinantalGenericEDDegree F};
   GED2 = GED2 | {leftKernelGenericEDDegree F};
   GED3 = GED3 | {numericGenericEDDegree(F, F)};
 )
 
-print("Comparing unit degrees")
-scan(#UED1, i -> (
-  if UED1_i =!= UED2_i then print("symb-left F: " | toString surface | "; " | UED1_i | ", " | UED2_i);
-  if UED2_i =!= UED3_i then print("left-num F: " | toString surface | "; " | UED2_i | ", " | UED3_i);
-  if UED1_i =!= UED3_i then print("sym-num F: " | toString surface | "; " | UED1_i | ", " | UED3_i);
+scan(#GED1, i -> (
+  if GED1_i =!= GED2_i then print("symb-left F: " | toString surfaces_i | "; " | GED1_i | ", " | GED2_i);
+  if GED2_i =!= GED3_i then print("left-num F: " | toString surfaces_i | "; " | GED2_i | ", " | GED3_i);
+  if GED1_i =!= GED3_i then print("sym-num F: " | toString surfaces_i | "; " | GED1_i | ", " | GED3_i);
 ))
 
-print("Comparing generic degrees")
-scan(#GED1, i -> (
-  if GED1_i =!= GED2_i then print("symb-left F: " | toString surface | "; " | GED1_i | ", " | GED2_i);
-  if GED2_i =!= GED3_i then print("left-num F: " | toString surface | "; " | GED2_i | ", " | GED3_i);
-  if GED1_i =!= GED3_i then print("sym-num F: " | toString surface | "; " | GED1_i | ", " | GED3_i);
-))
+--

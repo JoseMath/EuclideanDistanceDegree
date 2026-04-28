@@ -594,7 +594,7 @@ homotopyEDDegree(NumericalComputationOptions, String, Boolean, Boolean) := (NCO,
             --print("In stage 2, keep the critical points where each of these polynomials vanish ",NCO#"FinerRestriction");
             runRestrictIntersectionFunction(NCO#"FinerRestriction",stage)
         );
-        print("We have completed stage ",stage)
+        -- print("We have completed stage ",stage)
     ); 
 
     -- Polynomials that should vanish (onPolyList) or should not vanish (offPolyList).
@@ -643,33 +643,43 @@ numericGenericEDDegree(List, List) := o -> (F, G) -> numericWeightEDDegree(
     o
 )
 
-averageNumericEDDegree = method(Options => numericalOptions)
-averageNumericEDDegree(List, List, List, ZZ) := o -> (F, G, L, n) -> (
+aEDOptions = { TempDirectory => null, Tolerance => 1e-4 }
+averageNumericEDDegree = method(Options => aEDOptions)
+averageNumericEDDegree(List, FunctionClosure, ZZ) := o -> (P, SampleGenerator, n) -> (
+    if #P == 3 then (F, G, L) := (P_0, P_1, P_2) else (F, G, L) = (P_0, P_1, {});
+    dir := temporaryFileName();
+    if o.TempDirectory =!= null then dir = o.TempDirectory;
+
     -- Initial run
     R := ring first F;
-    NCO := newNumericalComputationOptions(F, G, L);
+    NCO := newNumericalComputationOptions(dir, F, G, L);
+    NCO#"StartData" = SampleGenerator();
+    NCO#"TargetData" = apply(#gens R, i -> randomRR());
+    NCO#"StartWeight" = NCO#"TargetWeight" = apply(#gens R, i -> 1_R);
+    NCO#"BertiniStartFiberSolveConfiguration" = {"FinalTol" => 1e-12};
     homotopyEDDegree(NCO, "Data", true, false);
 
-    -- homotopy to sampled data and average
+    -- path to sampled data and average real critical points
     avgEDDeg := 0;
-    for i to n do (
-        NCO#"StartData" = apply(#gens R, i -> randCC());
+    for i to n-1 do (
+        NCO#"StartData" = SampleGenerator();
         homotopyEDDegree(NCO, "Data", false, true);
 
         -- count real critical points
-        limitPoints := importMainDataFile(NCO#"Directory", NameMainDataFile => "stageTwo_main_data");
-        realEDDeg := number(limitPoints, P -> (
-            X := drop(drop(P#Coordinates, #G+1), -1);
-            all(X, x -> (imaginaryPart x / realPart x) < 1e-8)
+        critPoints := importMainDataFile(NCO#"Directory", NameMainDataFile => "stageTwo_main_data");
+        realPoints := number(critPoints, P -> (
+            coords := drop(drop(P#Coordinates, #G+1), -1);
+            HX := last P#Coordinates;
+            affineCoords := apply(coords, x -> x / HX);
+            all(affineCoords, x -> abs(imaginaryPart x) <= o.Tolerance)
         ));
-        avgEDDeg = avgEDDeg + realEDDeg;
+        avgEDDeg = avgEDDeg + realPoints;
     );
-    avgEDDeg/n
+    numeric(avgEDDeg/n)
 )
-averageNumericEDDegree(List, List, ZZ) := o -> (F, G, n) -> averageNumericEDDegree(
-    F, G, {},
-    n,
-    o
+averageNumericEDDegree(List, ZZ) := o -> (P, n) -> (
+    sampleGen := () -> apply(#gens ring first first P, i -> randomRR());
+    averageNumericEDDegree(P, sampleGen, n, o)
 )
 
 vanishTally = method() 
@@ -683,9 +693,45 @@ vanishTally(NumericalComputationOptions, Ideal, RR) := (NCO, Z, setTolerance) ->
         xSub := apply(gens S, X, (i,j) -> i=>j);
         if setTolerance > norm sub(sub(gens Z,S), xSub) then {p#PathNumber}|p#PathsWithSameEndpoint else null 
     ))
-)
+)   
 vanishTally(NumericalComputationOptions, Ideal) := (NCO, Z) -> vanishTally(NCO, Z, 1e-8)
 vanishTally(NumericalComputationOptions, List, RR) := (NCO, F, setTolerance) -> vanishTally(NCO, ideal F, setTolerance)
 vanishTally(NumericalComputationOptions, List) := (NCO, F) -> vanishTally(NCO, ideal F)
 
 end
+
+loadPackage "EuclideanDistanceDegree"
+loadPackage "Probability"
+n = 100;
+R = QQ[x,y];
+F = G = {x^2 + 4*y^2 - 4};
+Z = normalDistribution();
+sampleGen = () -> apply(#gens R, i -> random Z);
+averageNumericEDDegree({F,G}, sampleGen, n)
+
+loadPackage "EuclideanDistanceDegree"
+R = QQ[x,y];
+F = G = {x^2 + 4*y^2 - 4};
+dir = temporaryFileName();
+NCO = newNumericalComputationOptions(dir, F, G);
+NCO#"BertiniStartFiberSolveConfiguration" = {"FinalTol" => 1e-12};
+
+NCO#"StartData" = NCO#"TargetData" = apply(#gens R, i -> random(RR));
+homotopyEDDegree(NCO, "Data", true, false);
+
+NCO#"StartData" = apply(#gens R, i -> random(RR));
+homotopyEDDegree(NCO, "Data", false, true);
+
+limitPoints := importMainDataFile(NCO#"Directory", NameMainDataFile => "stageTwo_main_data");
+affinePoints = apply(limitPoints, P -> (
+    coords = drop(drop(P#Coordinates, #G+1), -1);
+    HX = last P#Coordinates;
+    apply(coords, x -> x / HX)
+));
+netList limitPoints
+
+netList readDirectory dir 
+scanLines(l -> print(l), dir | "/stageTwo_solutions");
+
+numericGenericEDDegree(F, G, TempDirectory => dir)
+averageNumericEDDegree({F,G}, sampleGen, 100);
