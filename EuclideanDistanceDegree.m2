@@ -14,7 +14,7 @@ newPackage(
   --DebuggingMode => false, -- turn off for release builds
   DebuggingMode => true,
   AuxiliaryFiles => false,
-  PackageImports => {"SimpleDoc","Bertini","NumericalAlgebraicGeometry","Elimination"},
+  PackageImports => {"SimpleDoc","Bertini","NumericalAlgebraicGeometry","Elimination","MonodromySolver"},
   PackageExports => {"Bertini","NumericalAlgebraicGeometry"},
   Configuration => {
     --"RandomCoefficients"=>CC,
@@ -41,8 +41,8 @@ load"./EDD_Parameterization.m2"
 
 export {
   "TempDirectory",
-  "FileDirectory",
   "ReturnCriticalIdeal",
+  "UseMonodromy",
   "symbolicWeightEDDegree",
   "determinantalUnitEDDegree",
   "determinantalGenericEDDegree",
@@ -230,6 +230,7 @@ doc /// --parameterized
     (parameterizedUnitEDDegree, List)
     parameterizedGenericEDDegree
     (parameterizedGenericEDDegree, List)
+    UseMonodromy
   Headline
     compute Euclidean distance degrees of parameterized varieties symbolically using conormal varieties
   Usage
@@ -243,6 +244,8 @@ doc /// --parameterized
       a (generic) data vector 
     W:List
       a (generic) weight vector
+    UseMonodromy:Boolean
+      if true, then solve system using monodromy instead of Bertini
   Outputs
     GED:ZZ
       a generic Euclidean distance degree
@@ -625,19 +628,45 @@ TEST ///  -- PNN function space
   assert(leftKernelGenericEDDegree(G) === numericGenericEDDegree(G, G));
 ///
 
-TEST ///  -- parameterization test
+TEST ///  -- parameterization: basic test
   setRandomSeed(123456);
-  n = 4;
-  numX = 2;
-  R = QQ[x_1..x_numX];
-  F = for i to 3 list x_1^2 + random(1,10) * x_1 + random(1,10) * x_2^i;
+  R = QQ[x,y];
+  F = {x^2 + 1, x * y, y - 1};
   GED_param = parameterizedGenericEDDegree F;
 
+  n = #F;
+  numX = #gens R;
   S = QQ[gens R] ** QQ[y_1..y_(n-numX), u_1..u_n];
   M = sub(matrix{F}, S);
   imageModel = eliminate(support M, ideal(M - matrix{for i from 1 to n list u_i}));
   GED_implicit = determinantalUnitEDDegree((sub(imageModel, QQ[support imageModel]))_*);
   assert(GED_param === GED_implicit);
+///
+
+TEST ///  -- parameterization: spurious critical points
+  setRandomSeed(123456);
+  R = QQ[x];
+  F = {x^2 - 1, x^3 - x};
+  GED_param = parameterizedGenericEDDegree F;
+
+  n = #F;
+  numX = #gens R;
+  S = QQ[gens R] ** QQ[y_1..y_(n-numX), u_1..u_n];
+  M = sub(matrix{F}, S);
+  imageModel = eliminate(support M, ideal(M - matrix{for i from 1 to n list u_i}));
+  GED_implicit = determinantalUnitEDDegree((sub(imageModel, QQ[support imageModel]))_*);
+  assert(GED_param === GED_implicit);
+///
+
+TEST ///  -- parameterization: monodromy vs symbolic
+  setRandomSeed(123456);
+  R = QQ[x1,x2,x3,x4,x5];
+  F = {x1^2+x4^2, x2^2+x5^2, x3^2+1, x1*x2+x4*x5, x1*x3+x4, x2*x3+x5};
+  U = {1,2,3,4,5,6};
+  W = {1,1,1,1,1,1};
+  GED1 = parameterizedWeightEDDegree(F,U,W);
+  GED2 = parameterizedWeightEDDegree(F,U,W, UseMonodromy => true);
+  assert(GED1 === GED2);
 ///
 
 -*
