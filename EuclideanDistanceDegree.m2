@@ -567,6 +567,7 @@ doc /// --vanishTally
 --##########################################################################--
 
 TEST /// -- basic examples
+  setRandomSeed(123);
   R = QQ[x0, x1, x2];
   F = {x0^2*x2 - x1^2*(x1 + x2)};
   assert(determinantalGenericEDDegree(F) === 7);
@@ -574,7 +575,6 @@ TEST /// -- basic examples
 
   R = QQ[jj]/ideal(jj^2+1)[x0,x1,x2];
   F = {x0^2*x1 -(x1 - jj*x2)^2*x2};
-  -- The output has a factor of 2 to account for the imaginary unit jj.
   assert(determinantalGenericEDDegree(F) === 2*7);
   assert(determinantalUnitEDDegree(F) === 2*7);
 
@@ -593,7 +593,7 @@ TEST /// -- basic examples
   R = QQ[x,y];
   F = G = {x^2+y^2-1};
   (U, W) = ({.12, .23}, {.15, .331})
-  assert(leftKernelWeightEDDegree(F, U, W), === 4);
+  assert(leftKernelWeightEDDegree(F, U, W) === 4);
   assert(leftKernelGenericEDDegree F === 4);
   assert(leftKernelUnitEDDegree F === 2);
 
@@ -604,7 +604,7 @@ TEST /// -- basic examples
 
 -- https://homepage.univie.ac.at/herwig.hauser/bildergalerie/gallery.html
 TEST ///  -- Selected surfaces from Herwig Hauser's algebraic surfaces gallery
-  setRandomSeed(123456);
+  setRandomSeed(123);
   R = QQ[x,y,z];
   surfaces = {
     3*x^2 + 3*y^2 + z^2 - 1,
@@ -692,7 +692,7 @@ TEST ///  -- parameterization: spurious critical points
 ///
 
 TEST ///  -- parameterization: monodromy vs symbolic
-  setRandomSeed(123456);
+  setRandomSeed(123);
   R = QQ[x1,x2,x3,x4,x5];
   F = {x1^2+x4^2, x2^2+x5^2, x3^2+1, x1*x2+x4*x5, x1*x3+x4, x2*x3+x5};
   U = {1,2,3,4,5,6};
@@ -757,27 +757,27 @@ viewHelp
 uninstallPackage "EuclideanDistanceDegree"
 restart
 loadPackage "EuclideanDistanceDegree"
-installPackage("EuclideanDistanceDegree", RemakeAllDocumentation => true, RerunExamples => false)
+installPackage("EuclideanDistanceDegree", RemakeAllDocumentation => false, RerunExamples => false)
 check "EuclideanDistanceDegree"
 
 --
 
 -- Debugging surface tests
 loadPackage "EuclideanDistanceDegree"
-setRandomSeed(123456);
+setRandomSeed(123);
 R = QQ[x,y,z];
-surfaces = {
-  3*x^2 + 3*y^2 + z^2 - 1,
-  x^2 + y^2 + z^3 - z^2,
-  x^2 + y^3 + z^5,
-  x^2 - y^2*z,
-  x^2 + y^2*z^3,
-  x^2 + y^2 + z^2 - 1,
-  x^2 + z^2 - y^3*(y-1)^3,
-  x^2 - y^3*z^3,
-  x^2 + y^2 + z,
-  x^2*y*z + x*y^2 + y^3 + y^3*z - x^2*z^2
-};
+  surfaces = {
+    3*x^2 + 3*y^2 + z^2 - 1,
+    x^2 + y^2 + z^3 - z^2,
+    x^2 + y^3 + z^5,
+    x^2 - y^2*z,
+    x^2 + y^2*z^3,
+    x^2 + y^2 + z^2 - 1,
+    x^2 + z^2 - y^3*(y-1)^3,
+    x^2 - y^3*z^3,
+    x^2 + y^2 + z,
+    x^2*y*z + x*y^2 + y^3 + y^3*z - x^2*z^2
+  };
 
 GED1 = {};
 GED2 = {};
@@ -792,6 +792,7 @@ for surface in surfaces do (
   GED3 = GED3 | {numericGenericEDDegree(F, F)};
 )
 
+print("checking degrees");
 scan(#GED1, i -> (
   if GED1_i =!= GED2_i then print("symb-left F: " | toString surfaces_i | "; " | GED1_i | ", " | GED2_i);
   if GED2_i =!= GED3_i then print("left-num F: " | toString surfaces_i | "; " | GED2_i | ", " | GED3_i);
