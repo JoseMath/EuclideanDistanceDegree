@@ -643,7 +643,7 @@ numericGenericEDDegree(List, List) := o -> (F, G) -> numericWeightEDDegree(
     o
 )
 
-aEDOptions = { TempDirectory => null, Tolerance => 1e-4 }
+aEDOptions = { TempDirectory => null, Tolerance => 1e-6 }
 averageNumericEDDegree = method(Options => aEDOptions)
 averageNumericEDDegree(List, FunctionClosure, ZZ) := o -> (P, SampleGenerator, n) -> (
     if #P == 3 then (F, G, L) := (P_0, P_1, P_2) else (F, G, L) = (P_0, P_1, {});
@@ -664,16 +664,8 @@ averageNumericEDDegree(List, FunctionClosure, ZZ) := o -> (P, SampleGenerator, n
     for i to n-1 do (
         NCO#"StartData" = SampleGenerator();
         homotopyEDDegree(NCO, "Data", false, true);
-
-        -- count real critical points
         critPoints := importMainDataFile(NCO#"Directory", NameMainDataFile => "stageTwo_main_data");
-        realPoints := number(critPoints, P -> (
-            coords := drop(drop(P#Coordinates, #G+1), -1);
-            HX := last P#Coordinates;
-            affineCoords := apply(coords, x -> x / HX);
-            all(affineCoords, x -> abs(imaginaryPart x) <= o.Tolerance)
-        ));
-        avgEDDeg = avgEDDeg + realPoints;
+        avgEDDeg = avgEDDeg + #realPoints(critPoints, Tolerance => o.Tolerance);
     );
     numeric(avgEDDeg/n)
 )
@@ -700,6 +692,7 @@ vanishTally(NumericalComputationOptions, List) := (NCO, F) -> vanishTally(NCO, i
 
 end
 
+restart
 loadPackage "EuclideanDistanceDegree"
 loadPackage "Probability"
 n = 100;
@@ -709,6 +702,7 @@ Z = normalDistribution();
 sampleGen = () -> apply(#gens R, i -> random Z);
 averageNumericEDDegree({F,G}, sampleGen, n)
 
+restart
 loadPackage "EuclideanDistanceDegree"
 R = QQ[x,y];
 F = G = {x^2 + 4*y^2 - 4};
@@ -723,6 +717,15 @@ NCO#"StartData" = apply(#gens R, i -> random(RR));
 homotopyEDDegree(NCO, "Data", false, true);
 
 limitPoints := importMainDataFile(NCO#"Directory", NameMainDataFile => "stageTwo_main_data");
+
+cnt1 = number(limitPoints, P -> (
+    coords := drop(drop(P#Coordinates, #G+1), -1);
+    HX := last P#Coordinates;
+    affineCoords := apply(coords, x -> x / HX);
+    all(affineCoords, x -> abs(imaginaryPart x) <= 1e-4)
+));
+cnt2 = realPoints(limitPoints);
+
 affinePoints = apply(limitPoints, P -> (
     coords = drop(drop(P#Coordinates, #G+1), -1);
     HX = last P#Coordinates;

@@ -7,7 +7,7 @@ newPackage(
     Email => "Jose@Math.wisc.edu",
     HomePage => "http://www.math.wisc.edu/~jose/"},
     {Name => "Will Huang",
-    Email => "williamhuang5120@gmail.com",
+    Email => "whuang259@wisc.edu",
     HomePage => ""}
   },
   Headline => "Produces equations and computes ED degrees. ",
@@ -93,89 +93,80 @@ doc /// --EuclideanDistanceDegree Package
   Key
     EuclideanDistanceDegree 
   Headline
-    a package to compute Euclidean distance degrees
+    compute Euclidean distance degrees of varieties
   Description
     Text
-      This package provides several routines for determining the (generic or unit) Euclidean distance degree of an algebraic variety.
-      These routines include symbolic methods and numerical methods for determining these degrees. 
+      The Euclidean distance (ED) degree of a varieties arises from the following problem: given a (generic) data point, find the point on a
+      given variety which minimizes the (possibly weighted) Euclidean distance function. The number of nonsingular critical points of the 
+      distance function is the ED degree of the variety.
     Text
-      Using symbolic computation, this code computes the (unit) ED degree of a circle. 		 
-    Example
-      R = QQ[x,y]
-      F = {x^2 + y^2 - 1}
-      2 == determinantalUnitEDDegree(F)
+      This package provides several routines for determining the (generic or unit) Euclidean distance degree of an algebraic variety. These 
+      routines include symbolic methods and numerical methods for determining these degrees; they can be grouped into four main types:
+    Code
+      UL {
+        TO symbolicWeightEDDegree,
+        TO leftKernelWeightEDDegree,
+        TO numericWeightEDDegree,
+        TO parameterizedWeightEDDegree
+      }
     Text
-      Using numeric computation, this code computes the (unit) ED degree of a circle. 		 
-    Example
-      R = QQ[x,y];
-      F = {x^2 + y^2 - 1};
-      2 == leftKernelUnitEDDegree(F)
-    Text
-      This package also computes generic ED degrees. The generic ED degree of a variety $X$ is always greater than or equal to the unit 
-      ED degree of $X$.
+      As an example, this code computes the (unit) ED degree of a circle both symbolically and numerically
     Example
       R = QQ[x,y];
       F = {x^2 + y^2 - 1};
-      4 == determinantalGenericEDDegree(F)
-      2 == determinantalUnitEDDegree(F)
-    Text
-      The most general method for computing ED degrees with symbolic computation is the `symbolicWeightEDDegree` method.
-    Example
-      R = QQ[x, y];
-      F = {x^2 + y^2 - 1};
-      genericWeightVector = {2, 3};
-      unitWeightVector = {1, 1};
-      dataVector = {5, 7};
-      4 == symbolicWeightEDDegree(F, dataVector, genericWeightVector)
-      2 == symbolicWeightEDDegree(F, dataVector, unitWeightVector)		
+      determinantalUnitEDDegree(F)
+      leftKernelUnitEDDegree(F)
     Text
       When the variety is an affine cone, one is able to compute ED degrees using ED degree homotopies, i.e., a structured parameter 
       homotopy. The easiest case is when the variety is a hypersurface (or more generally, a complete intersection)  
     Example
-      R = QQ[x1,x2,x3,x4]
-      F = G = {det genericMatrix(R,2,2)}
-      6 == numericGenericEDDegree(F, G)
-      2 == numericUnitEDDegree(F, G)
+      R = QQ[x1,x2,x3,x4];
+      F = G = {det genericMatrix(R,2,2)};
+      numericGenericEDDegree(F, G)
     Text
       When a $V(F)$ is not a complete intersection we incorporate a membership test to filter out residual critical points. Here $V(F)$
       is an irreducible component of $V(G)$ (a reducible variety) and `#G===codim ideal F`.  These methods employ an equation by equation
       method called regeneration. 
     Example
-      R = QQ[x1,x2,x3,x4,x5,x6]
-      F = (minors(2, genericMatrix(R,3,2)))_*
-      G = drop(F, -1)
-      #G == codim ideal F
-      10 == numericGenericEDDegree(F, G)
-      2 == numericUnitEDDegree(F, G)
-    Text
-      One may also determine (Unit) ED degrees using a parameter homotopy called a Weight-ED Degree Homotopy. 
-    Example
       R = QQ[x1,x2,x3,x4,x5,x6];
       F = (minors(2, genericMatrix(R,3,2)))_*;
       G = drop(F, -1);
-      NCO = newNumericalComputationOptions(F, G)
-      NCO#"TargetWeight" = apply(#gens R, i->1)
-      2 == homotopyEDDegree(NCO, "Weight", true, true)
-
-      NCO#"TargetWeight" = apply(#gens R, i->random RR)
-      10 == homotopyEDDegree(NCO, "Weight", false, true)
+      #G == codim ideal F;
+      numericGenericEDDegree(F, G)
     Text
-      One may also compute critical points for different data using a parameter homotopy called a Data-ED Degree Homotopy. 
+      One may also determine ED degrees using a parameter homotopy called a Weight-ED Degree Homotopy. This code computes a unit ED degree:
     Example
       R = QQ[x1,x2,x3,x4,x5,x6];
       F = (minors(2, genericMatrix(R,3,2)))_*;
       G = drop(F, -1);
       NCO = newNumericalComputationOptions(F, G);
-      NCO#"TargetData" = apply(#gens R, i->1)
-      10 == homotopyEDDegree(NCO, "Data", true, true)
-      importSolutionsFile(NCO#"Directory", NameSolutionsFile => "member_points")
-
-      NCO#"TargetWeight" = {0} | (apply(-1 + #gens R, i->1))
-      homotopyEDDegree(NCO, "Data", false, true)
-      importSolutionsFile(NCO#"Directory", NameSolutionsFile => "member_points")	
+      NCO#"TargetWeight" = apply(#gens R, i->1);
+      homotopyEDDegree(NCO, "Weight", true, true)
 ///
 
 doc /// --symbolic
+  Key
+    ReturnCriticalIdeal
+    [symbolicWeightEDDegree, ReturnCriticalIdeal]
+    [determinantalUnitEDDegree, ReturnCriticalIdeal]
+    [determinantalGenericEDDegree, ReturnCriticalIdeal]
+  Headline
+    whether to return the ideal of critical points
+  Usage
+    ICP = symbolicWeightEDDegree(F, U, W, ReturnCriticalIdeal => true)
+  Description
+    Text
+      Symbolic methods compute the Euclidean Distance degree of a variety by computing the degree of its critical ideal, which defines the
+      critical points of the distance function on the variety. Setting this option will cause symbolic methods to return this ideal rather
+      than its degree.
+    Example
+      R = QQ[x,y];
+      F = {x^2 + y^2 - 1};
+      (U,W) = ({12, 23}, {15, 331});
+      ICP = symbolicWeightEDDegree(F, U, W, ReturnCriticalIdeal => true)
+///
+
+doc ///
   Key
     symbolicWeightEDDegree
     (symbolicWeightEDDegree, List, List, List)
@@ -183,13 +174,12 @@ doc /// --symbolic
     (determinantalUnitEDDegree, List)
     determinantalGenericEDDegree
     (determinantalGenericEDDegree, List)
-    ReturnCriticalIdeal
   Headline
-    compute Euclidean distance degrees of affine varieties using minors of the augmented Jacobian
+    symbolically compute ED degrees of affine varieties
   Usage
     UED = determinantalUnitEDDegree(F)
     GED = determinantalGenericEDDegree(F)
-    GED = symbolicWeightEDDegree(F, U, W)
+    GED = symbolicWeightEDDegree(F,U,W)
   Inputs
     F:List
       a system of polynomials (system need not be square)
@@ -198,25 +188,20 @@ doc /// --symbolic
     W:List
       a (generic) weight vector
   Outputs
-    GED:ZZ
-      a generic Euclidean distance degree 
-    UED:ZZ
-      a unit Euclidean distance degree 
+    ED:ZZ
+      a generic/unit Euclidean distance degree 
     ICP:Ideal
-      an ideal for the variety of critical points
+      ideal of critical points (if ReturnCriticalIdeal is set)
   Description
     Text
-      This method computes Euclidean distance (ED) degrees for the variety defined by the system $F$ via symbolic computation. The critical
-      ideal is formed by saturating the ideal defined by $F$ with the ideals of minors of the Jacobian and Augmented Jacobian. The degree of
-      the critical ideal is the ED degree of the variety.
-    Text
-      The default is to return a degree (GED or UED) but the option ReturnCriticalIdeal=>true will change the method to return the critical
-      ideal instead. The `determinantalUnitEDDegree` method computes an ED degree using random (integer) data and unit weights, whereas
-      `determinantalGenericEDDegree` will use random data and random weights.
+      This method computes Euclidean distance (ED) degrees for the variety defined by the system F via symbolic computation. The ideal of
+      critical points is formed by saturating the defining ideal of the variety with minors of the Jacobian and Augmented Jacobian. The
+      degree of this ideal is the ED degree of the variety. The unit variant of this method computes an ED degree using random (integer) 
+      data and unit weights, whereas the generic variant will use random data and random weights.
     Example
-      R = QQ[x,y]
-      F = {x^2 + y^2 - 1}
-      (U,W) = ({12, 23}, {15, 331})
+      R = QQ[x,y];
+      F = {x^2 + y^2 - 1};
+      (U,W) = ({12, 23}, {15, 331});
       UED = determinantalUnitEDDegree F
       GED = determinantalGenericEDDegree F
       ICP = symbolicWeightEDDegree(F, U, W, ReturnCriticalIdeal => true)
@@ -224,46 +209,89 @@ doc /// --symbolic
 
 doc /// --parameterized
   Key
+    UseMonodromy
+    [parameterizedWeightEDDegree, UseMonodromy]
+    [parameterizedUnitEDDegree, UseMonodromy]
+    [parameterizedGenericEDDegree, UseMonodromy]
+  Headline
+    whether to use monodromy methods to compute degrees
+  Usage
+    GED = parameterizedWeightEDDegree(F, U, W, UseMonodromy => true)
+  Description
+    Text
+      If this option is set, the parameterized ED degree methods will use the MonodromySolver to numerically solve the critical equations 
+      and report the number of regular solutions as the ED degree of the parameterized variety.
+    Example
+      R = QQ[x,y];
+      F = {x^2 + 1, x * y, y - 1};
+      GED = parameterizedGenericEDDegree(F, UseMonodromy => true)
+  Caveat
+    Using monodromy may result in an ED degree that is less than expected. In particular, if the parameterization map is n-to-one, 
+    using monodromy to solve for the degree may result in a degree than is off by a factor of n.
+///
+
+doc ///
+  Key
     parameterizedWeightEDDegree
     (parameterizedWeightEDDegree, List, List, List)
     parameterizedUnitEDDegree
     (parameterizedUnitEDDegree, List)
     parameterizedGenericEDDegree
     (parameterizedGenericEDDegree, List)
-    UseMonodromy
   Headline
-    compute Euclidean distance degrees of parameterized varieties symbolically using conormal varieties
+    compute ED degrees of parameterized varieties
   Usage
     UED = parameterizedUnitEDDegree(F)
     GED = parameterizedGenericEDDegree(F)
-    GED = parameterizedWeightEDDegree(F, U, W)
+    GED = parameterizedWeightEDDegree(F,U,W)
   Inputs
     F:List
-      a system of polynomials in $d$ variables parameterizing a $d$-dimensional variety 
+      a system of polynomials in d variables parameterizing a d-dimensional variety 
     U:List
       a (generic) data vector 
     W:List
       a (generic) weight vector
-    UseMonodromy:Boolean
-      if true, then solve system using monodromy instead of Bertini
   Outputs
-    GED:ZZ
-      a generic Euclidean distance degree
-    UED:ZZ
-      a unit Euclidean distance degree
+    ED:ZZ
+      a generic/unit Euclidean distance degree
   Description
     Text
-      This method computes Euclidean distance (ED) degrees for the variety parameterized by the a set of polynomials $F$ in $d$ variables. If
-      the resulting variety is $d$-dimensional, then by finding a global description for the kernel of the Jacobian map, the critical
-      equations of the variety can be computed. The `parameterizedUnitEDDegree` method computes an ED degree using random (integer) data an
-      unit weights, whereas `parameterizedGenericEDDegree` will use random data and random weights.
+      This method computes Euclidean distance (ED) degrees for the variety parameterized by the a set of polynomials F in d variables. If
+      the resulting variety is d-dimensional, then by finding a global description for the kernel of the Jacobian map, the critical
+      equations of the variety can be computed. The unit variant of this method computes an ED degree using random (integer) data and unit
+      weights, whereas the generic variant will use random data and random weights.
     Example
-      R = QQ[x,y]
-      F = {x^2 + 1, x * y, y - 1}
-      (U,W) = ({12, 23, 25}, {15, 331, 1})
+      R = QQ[x,y];
+      F = {x^2 + 1, x * y, y - 1};
+      (U,W) = ({12, 23, 25}, {15, 331, 1});
       UED = parameterizedUnitEDDegree F
       GED = parameterizedGenericEDDegree F
       GED = parameterizedWeightEDDegree(F, U, W)
+///
+
+doc /// --TempDirectory
+  Key
+    TempDirectory
+    [leftKernelWeightEDDegree, TempDirectory]
+    [leftKernelUnitEDDegree, TempDirectory]
+    [leftKernelGenericEDDegree, TempDirectory]
+    [numericWeightEDDegree, TempDirectory]
+    [numericUnitEDDegree, TempDirectory]
+    [numericGenericEDDegree, TempDirectory]
+    [averageNumericEDDegree, TempDirectory]
+  Headline
+    set directory for Bertini runs
+  Usage
+    GED = leftKernelGenericEDDegree(F, U, W, TempDirectory => dir)
+  Description
+    Text
+      This option is used to change the directory from which Bertini files are written to and run from for the numerical methods. If unset,
+      a temp directory will be created and used.
+    Example
+      R = QQ[x,y];
+      F = {x^2 + y^2 - 1};
+      dir = temporaryFileName();
+      GED = leftKernelGenericEDDegree(F, TempDirectory => dir)
 ///
 
 doc /// --leftKernel
@@ -274,13 +302,12 @@ doc /// --leftKernel
     (leftKernelUnitEDDegree, List)
     leftKernelGenericEDDegree
     (leftKernelGenericEDDegree, List)
-    TempDirectory
   Headline
-    compute Euclidean distance degrees of affine varieties that are complete intersections using numerical computation
+    numerically compute Euclidean distance degrees of complete intersections
   Usage
-    GED = leftKernelWeightEDDegree(F,U,W)
-    GED = leftKernelGenericEDDegree(F)
     UED = leftKernelUnitEDDegree(F)
+    GED = leftKernelGenericEDDegree(F)
+    GED = leftKernelWeightEDDegree(F,U,W)
   Inputs
     F:List
       a system of polynomials (need not be square) defining an affine variety that is a complete intersection
@@ -289,27 +316,24 @@ doc /// --leftKernel
     W:List
       a (generic) weight vector
   Outputs
-    GED:ZZ
-      a generic Euclidean distance degree
-    UED:ZZ
-      a unit Euclidean distance degree 
+    ED:ZZ
+      a generic/unit Euclidean distance degree
   Description
     Text
-      This method computes Euclidean distance (ED) degrees for the variety defined by the system $F$ numerically using Lagrange 
-      multipliers. The left kernel of the augmented Jacobian matrix is used to define a critical ideal which is passed to Bertini. The 
-      Bertini input files are written in a temporary directory and then Bertini is ran to compute critical points.
-    Text
-      By default, this method creates a temporary directory to store the input files. A specific directory can be specified as a string 
-      using the `TempDirectory` option, a directory will be created if it does not exist. The `leftKernelUnitEDDegree` method computes an 
-      ED degree using random (complex) data and unit weights, whereas `leftKernelGenericEDDegree` will use random data and random weights.
+      This method computes Euclidean distance (ED) degrees for affine varieties defined by the system F numerically using Lagrange
+      multipliers. If the resulting variety is a complete intersection, the left kernel of the augmented Jacobian is used to derive a set of 
+      critical erquations which are passed into Bertini. The resulting number of critical points is returned as the ED degree. The unit 
+      variant of this method computes an ED degree using random (complex) data and unit weights, whereas `leftKernelGenericEDDegree` will 
+      use random data and random weights.
     Example
-      R = QQ[x,y]
-      F = {x^2 + y^2 - 1}
-      (U,W) = ({.12, .23}, {.15, .331})
-      dir = temporaryFileName()
-      GED = leftKernelWeightEDDegree(F, U, W, TempDirectory => dir)
-      GED = leftKernelGenericEDDegree F
+      R = QQ[x,y];
+      F = {x^2 + y^2 - 1};
+      (U,W) = ({.12, .23}, {.15, .331});
       UED = leftKernelUnitEDDegree F
+      GED = leftKernelGenericEDDegree F
+      GED = leftKernelWeightEDDegree(F, U, W)
+  Caveat
+    The computed ED degree may be lower than expected due to path tracking.
 ///
 
 -*
@@ -323,7 +347,7 @@ Unused keys, maybe for a later version?
       `HomogeneousVariableGroups` and `AffineVariableGroups` to modify variable groups. By default the variables of `ring F` are treated
       as Homogeneous. 
 *-
-doc ///  -- NumericalComputationOptions
+doc ///  --NumericalComputationOptions
   Key
     NumericalComputationOptions
     newNumericalComputationOptions
@@ -349,64 +373,48 @@ doc ///  -- NumericalComputationOptions
       a system of linear polynomials, i.e. a submodel
   Outputs
     NCO:NumericalComputationOptions
-      a MutableHashTable to keeps track of the options and configurations for the homotopy methods
+      a MutableHashTable to keep track of options and configurations for the homotopy methods
   Description
     Text
-      A `NumericalComputationOptions` object stores all the options needed to define a homotopy run with Bertini. At mimumum it requires
-      the model $F$ for which the ED Degree will be computed and a witness model $G$. A submodel $L$ may be passed in, by default it will
+      This object stores all the options needed compute an ED degree using homotopy continuation with Bertini. At mimumum it requires
+      the model F for which the ED Degree will be computed and a witness model G. A submodel L may be passed in, by default it will
       be the empty set. A String indicating the temporary directory from which Bertini will read/write files during the run may also be
       passed in as an optional argument, by default it will be a random temporary file name. The temporary directory will be created
       if it does not exist.
     Text
       Keys available to customize the homotopy include: 
-      `Directory` to change the directory Bertini is run from, the directory need not exist. 
-      `StartData` and `TargetData` if executing a Data homotopy, defaults to random complex data. 
-      `StartWeight` and `TargetWeight` if executing a Weight homotopy, defaults to random complex and unit weights respectively. 
-      `Infinity` to add a hyperplane at infinity for homogenization, one is create by default in @TO homotopyEDDegree@ if not present. 
-      `PrimalCoordinates` to add additional variables to the ambient space. By default this field will already contain the variables of 
+      "Directory" to change the directory Bertini is run from, the directory need not exist initially. 
+      "StartData" and "TargetData" if executing a Data homotopy, defaults to random complex data. 
+      "StartWeight" and "TargetWeight" if executing a Weight homotopy, defaults to random complex and unit weights respectively. 
+      "Infinity" to add a hyperplane at infinity for homogenization, one is created by default in @TO homotopyEDDegree@ if not present. 
+      "PrimalCoordinates" to add additional variables to the ambient space. By default this field will already contain the variables of 
       `ring F`, thus it is safer to append extra variables rather than overwriting the less, otherwise subsequent methods may fail. 
     Text
       Keys are also available to customize the Bertini run: 
-      `FinerRestriction` a list of polynomials to filter down critical points. Critical points will only be kept if they vanish
+      "FinerRestriction" a list of polynomials to filter down critical points. Critical points will only be kept if they vanish
       for every polynomial in this list. 
-      `BertiniStartFiberSolveConfiguration` a list of options (e.g. `FinalTol -> 1e-8`) that will be passed into the Berni inputs file. By
-      default, the options {"TrackType"=>0, "PrintPathProgress"=>1000} are included.
+      "BertiniStartFiberSolveConfiguration" a list of options (e.g. `FinalTol -> 1e-8`) that will be passed into the Berni inputs file. By
+      default, the options `{"TrackType"=>0, "PrintPathProgress"=>1000}` are included.
     Example
-      R = QQ[x,y]
-      F = G = {x^2 + y^2 - 1}
-      dir = temporaryFileName()
-      NCO = newNumericalComputationOptions(dir, F, G)
+      R = QQ[x,y];
+      F = G = {x^2 + y^2 - 1};
+      dir = temporaryFileName();
+      NCO = newNumericalComputationOptions(dir, F, G);
+      NCO#"TargetWeight" = apply(#gens R, i -> 1_R);
+      UED = homotopyEDDegree(NCO, "Weight", true, true)
 ///
 
-doc /// --numeric
+doc /// --homotopy
   Key
     homotopyEDDegree   
     (homotopyEDDegree, NumericalComputationOptions, String, Boolean, Boolean)
-    numericWeightEDDegree
-    (numericWeightEDDegree, List, List, List, List)
-    numericUnitEDDegree
-    (numericUnitEDDegree, List, List)
-    numericGenericEDDegree
-    (numericGenericEDDegree, List, List)
   Headline
-    compute Euclidean distance degrees of projective varieties (affine cones) numerically using homotopy continuation
+    numerically compute ED degrees of affine cones using homotopy continuation
   Usage
-    GED = numericGenericEDDegree(F,G)
-    UED = numericUnitEDDegree(F,G)
     GED = homotopyEDDegree(NCO, "Weight", true, false)
   Inputs
     NCO:NumericalComputationOptions
       a MutableHashTable to keeps track of the options and configurations for the homotopy methods
-    F:List
-      a system of polynomials (need not be square) defining the variety
-    G:List
-      a system of polynomials (complete intersection) such that V(F) is an irreducible component of V(G), i.e. a witness model
-    L:List
-      a system of linear polynomials, i.e. a submodel
-    U:List
-      a (generic) data vector
-    W:List
-      a (generic) weight vector
     ht:String
       one of "Weight" or "Data" which defines the type of homotopy to execute
     isStageOne:Boolean
@@ -414,40 +422,67 @@ doc /// --numeric
     isStageTwo:Boolean
       if set, runs stage 2 to solve the target system via path tracking
   Outputs
-    GED:ZZ
-      a generic Euclidean distance degree
-    UED:ZZ
-      a unit Euclidean distance degree
+    ED:ZZ
+      a generic/unit Euclidean distance degree
   Description
     Text
-      Uses a weight homotopy by default, though data homotopy is also available. The Bertini input files are written in dir
-      and then Bertini is ran. The `numericWeightEDDegree`, `numericUnitEDDegree`, and `numericGenericEDDegree` methods are all weight
-      homotopy methods. Finer control over the homotopy is accomplished using the `homotopyEDDegree` method by modifying the
-      @TO NumericalComputationOptions@ object.
-    Text
-      By default, all methods except `homotopyEDDegree` will create a temporary directory to store the input files. A specific directory can
-      be specified as a string using the `TempDirectory` option, a directory will be created if it does not exist. For `homotopyEDDegree`, a
-      temp directory can be specified on the @TO NumericalComputationOptions@ object. The `numericUnitEDDegree` method computes an ED degree
-      using random (complex) data and unit weights, whereas `numericGenericEDDegree` will use random data and random weights.
+      Executes the homotopy defined by the passed in @TO NumericalComputationOptions@ object. A weight homotopy will vary the weights of the
+      distance function whereas a data homotopy will vary the data point. A stage1 homotopy solves the start system as defined in NCO whereas
+      stage2 will perform the weight/data homotopy to solve the defined target system. It is possible to perform stage2 multiple times for
+      different target systems without rerunning stage1, but at least one stage1 homotopy must be executed in the directory specified in NCO
+      for stage2 to executed properly.
     Example
-      R = QQ[x,y]
-      F = G = {x^2+y^2-1}
-      GED = numericGenericEDDegree(F, G)
-      UED = numericUnitEDDegree(F, G)
+      R = QQ[x,y];
+      F = G = {x^2+y^2-1};
+      NCO = newNumericalComputationOptions(F, G);
+      NCO#"TargetWeight" = apply(#gens R, i -> random RR);
+      GED = homotopyEDDegree(NCO, "Weight", true, true)
 
-      NCO = newNumericalComputationOptions(F, G)
-      NCO#"TargetWeight"
-      GED = homotopyEDDegree(NCO, "Weight", true, false)
-      UED = homotopyEDDegree(NCO, "Weight", true, true)
-
-      dir = temporaryFileName()
-      U = {1, 2}
-      W1 = {1, 1}
-      WS = {.7, 1.2}
-      GED = numericWeightEDDegree(F, G, U, WS, TempDirectory => dir)
-      UED = numericWeightEDDegree(F, G, U, W1, TempDirectory => dir)
+      NCO#"TargetWeight" = apply(#gens R, i -> 1_R);
+      UED = homotopyEDDegree(NCO, "Weight", false, true)
   Caveat
-    Inaccurate results may be returned if V(F) is contained in V(L)
+    Inaccurate results may be returned if V(F) is contained in V(L). The computed ED degree may be lower than expected due to path tracking.
+///
+
+doc /// --numeric
+  Key
+    numericWeightEDDegree
+    (numericWeightEDDegree, List, List, List, List)
+    numericUnitEDDegree
+    (numericUnitEDDegree, List, List)
+    numericGenericEDDegree
+    (numericGenericEDDegree, List, List)
+  Headline
+    numerically compute ED degrees of affine cones using homotopy continuation
+  Usage
+    UED = numericUnitEDDegree(F,G)
+    GED = numericGenericEDDegree(F,G)
+    GED = homotopyEDDegree(F,G,U,V)
+  Inputs
+    F:List
+      a system of polynomials (need not be square) defining the variety
+    G:List
+      a system of polynomials (complete intersection) such that V(F) is an irreducible component of V(G), i.e. a witness model
+    U:List
+      a (generic) data vector
+    W:List
+      a (generic) weight vector
+  Outputs
+    ED:ZZ
+      a generic/unit Euclidean distance degree
+  Description
+    Text
+      Special instances of the @TO homotopyEDDegree@ method that uses a homotopy on weights. The unit variant of this method computes an ED
+      degree using random (complex) data and unit weights, whereas `numericGenericEDDegree` will use random data and random weights.
+    Example
+      R = QQ[x,y];
+      F = G = {x^2+y^2-1};
+      (U,W) = ({.12, .23}, {.15, .331});
+      UED = numericUnitEDDegree(F, G)
+      GED = numericGenericEDDegree(F, G)
+      GED = numericWeightEDDegree(F, G, U, W)
+  Caveat
+    Inaccurate results may be returned if V(F) is contained in V(L). The computed ED degree may be lower than expected due to path tracking.
 ///
 
 doc /// --average
@@ -471,8 +506,6 @@ doc /// --average
       a function which generates data samples
     n: ZZ
       number of samples to take
-    Tolerance: RR
-      tolerance for identifying real critical points
   Outputs
     aED: RR
       average ED degree after n trials
@@ -480,13 +513,13 @@ doc /// --average
     Text
       Generate data samples using the given function and uses homotopy continuation to find critical points of the distance function. The
       average number of real critical points after $n$ trials is returned. This method creates a @TO NumericalComputationOptions@ object and 
-      computes critical points using the @TO homotopyEDDegree@ method. The tempory directory from which Bertini is ran can be specified using
-      the `TempDirectory` option. By default, random(RR) is used to generate data samples. A point is considered real if its imaginary
-      part has magnitude less than a tolerance. By default this is 1e-4, but can be changed via the `Tolerance` option.
+      computes critical points using the @TO homotopyEDDegree@ method. By default, `random(RR)` is used to generate data samples. Points are 
+      tested using the @TO realPoints@ function from the @TO NumericalAlgebraicGeometry@ package, a tolerance can be passed along using the
+      `Tolerance` option, by default it is 1e-6.
     Example
-      R = QQ[x,y]
-      F = G = {x^2 + y^2 - 1}
-      sampleGen = () -> apply(#gens R, i -> random(RR))
+      R = QQ[x,y];
+      F = G = {x^2 + y^2 - 1};
+      sampleGen = () -> apply(#gens R, i -> random(RR));
       aED = averageNumericEDDegree({F, G}, sampleGen, 10)
 ///
 
@@ -646,7 +679,7 @@ TEST ///  -- parameterization: basic test
 TEST ///  -- parameterization: spurious critical points
   setRandomSeed(123456);
   R = QQ[x];
-  F = {x^2 - 1, x^3 - x};
+  F = {x^2, x^3};
   GED_param = parameterizedGenericEDDegree F;
 
   n = #F;
@@ -713,11 +746,21 @@ TEST ///  -- lightning self-attention network function space
 
 end
 
+uninstallPackage "EuclideanDistanceDegree"
 restart
 loadPackage "EuclideanDistanceDegree"
 installPackage "EuclideanDistanceDegree"
 check "EuclideanDistanceDegree"
 
+viewHelp
+
+uninstallPackage "EuclideanDistanceDegree"
+restart
+loadPackage "EuclideanDistanceDegree"
+installPackage("EuclideanDistanceDegree", RemakeAllDocumentation => true, RerunExamples => false)
+check "EuclideanDistanceDegree"
+
+--
 
 -- Debugging surface tests
 loadPackage "EuclideanDistanceDegree"
@@ -754,5 +797,3 @@ scan(#GED1, i -> (
   if GED2_i =!= GED3_i then print("left-num F: " | toString surfaces_i | "; " | GED2_i | ", " | GED3_i);
   if GED1_i =!= GED3_i then print("sym-num F: " | toString surfaces_i | "; " | GED1_i | ", " | GED3_i);
 ))
-
---

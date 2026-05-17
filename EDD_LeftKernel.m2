@@ -23,7 +23,7 @@ leftKernelWeightEDDegree(List, List, List) := o-> (F, data, weight) -> (
     restrictLam := apply(#lamList - 1 - #F, i->makeB'Section(drop(lamList, 1)));
 
     win := restrictLam | F | critEq;
-    constants := (transpose{uList, data}) | (transpose{wList, weight});
+    consts := (transpose{uList, data}) | (transpose{wList, weight});
     --sl = ideal singularLocus I;
     --win = saturate(win, sl);
 
@@ -33,7 +33,7 @@ leftKernelWeightEDDegree(List, List, List) := o-> (F, data, weight) -> (
         HomVariableGroup => {lamList},
         BertiniInputConfiguration => {"UseRegeneration" => 1, "TrackType" => 0, "PrintPathProgress" => 1000},
         B'Polynomials => win,
-        B'Constants => constants
+        B'Constants => consts
 	);
 
     dir = addSlash(dir);

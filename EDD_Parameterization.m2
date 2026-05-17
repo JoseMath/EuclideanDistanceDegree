@@ -1,9 +1,9 @@
--- makeJac = (system,unknowns) -> ( for i in system list for j in unknowns list diff(j,i) )
-rand := randomZZ
+rand := () -> random QQ;
 
 parameterOptions = { UseMonodromy => false }
 parameterizedWeightEDDegree = method(Options => parameterOptions)
 parameterizedWeightEDDegree(List, List, List) := o -> (F, U, W) -> (
+    -- print("U: " | toString U | " W: " | toString W);
     R := ring first F;
     coef := coefficientRing R;
     numX := #gens R;
@@ -17,7 +17,7 @@ parameterizedWeightEDDegree(List, List, List) := o -> (F, U, W) -> (
     -- Find a spanning set for ker(jacM)
     jacM := transpose sub(matrix makeJac(apply(F, i->sub(i,S)), xList), S);
     assert(rank jacM == numX);  -- ensure dim X = d
-    columnVectors := gens kernel jacM;
+    columnVectors := gens kernel jacM;  -- bottleneck
     evalColumnVectors := sub(columnVectors, apply(xList, x -> x => random(1, 100)));
 
     A := matrix for i to n-1 list {};
@@ -52,16 +52,16 @@ parameterizedWeightEDDegree(List, List, List) := o -> (F, U, W) -> (
 parameterizedUnitEDDegree = method(Options => parameterOptions)
 parameterizedUnitEDDegree(List) := o -> (F) -> parameterizedWeightEDDegree(
     F,
-    apply(#F, i->rand()),
-    apply(#F, i->1_(ring first F)),
+    apply(#F, i -> rand()),
+    apply(#F, i -> 1_(ring first F)),
     o
 )
 
 parameterizedGenericEDDegree = method(Options => parameterOptions)
 parameterizedGenericEDDegree(List) := o -> (F) -> parameterizedWeightEDDegree(
     F,
-    apply(#F, i->rand()),
-    apply(#F, i->rand()),
+    apply(#F, i -> rand()),
+    apply(#F, i -> rand()),
     o
 )
 
