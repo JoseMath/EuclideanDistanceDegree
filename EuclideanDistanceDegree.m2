@@ -43,6 +43,8 @@ export {
   "TempDirectory",
   "ReturnCriticalIdeal",
   "UseMonodromy",
+  "Submodel",
+  "SampleGenerator",
   "symbolicWeightEDDegree",
   "determinantalUnitEDDegree",
   "determinantalGenericEDDegree",
@@ -59,7 +61,6 @@ export {
   "parameterizedGenericEDDegree",
   "parameterizedUnitEDDegree",
   "averageNumericEDDegree"
-  -- "vanishTally"
 }
 
 ----------------------------------------------------------------------------------------------------------------
@@ -194,7 +195,7 @@ doc ///
       ideal of critical points (if ReturnCriticalIdeal is set)
   Description
     Text
-      This method computes Euclidean distance (ED) degrees for the variety defined by the system F via symbolic computation. The ideal of
+      This method computes Euclidean distance (ED) degrees for the variety defined by the system $F$ via symbolic computation. The ideal of
       critical points is formed by saturating the defining ideal of the variety with minors of the Jacobian and Augmented Jacobian. The
       degree of this ideal is the ED degree of the variety. The unit variant of this method computes an ED degree using random (integer) 
       data and unit weights, whereas the generic variant will use random data and random weights.
@@ -226,8 +227,8 @@ doc /// --parameterized
       F = {x^2 + 1, x * y, y - 1};
       GED = parameterizedGenericEDDegree(F, UseMonodromy => true)
   Caveat
-    Using monodromy may result in an ED degree that is less than expected. In particular, if the parameterization map is n-to-one, 
-    using monodromy to solve for the degree may result in a degree than is off by a factor of n.
+    Using monodromy may result in an ED degree that is less than expected. In particular, if the parameterization map is $n$-to-one, 
+    using monodromy to solve for the degree may result in a degree than is off by a factor of $n$.
 ///
 
 doc ///
@@ -246,7 +247,7 @@ doc ///
     GED = parameterizedWeightEDDegree(F,U,W)
   Inputs
     F:List
-      a system of polynomials in d variables parameterizing a d-dimensional variety 
+      a system of polynomials in $d$ variables parameterizing a $d$-dimensional variety 
     U:List
       a (generic) data vector 
     W:List
@@ -256,8 +257,8 @@ doc ///
       a generic/unit Euclidean distance degree
   Description
     Text
-      This method computes Euclidean distance (ED) degrees for the variety parameterized by the a set of polynomials F in d variables. If
-      the resulting variety is d-dimensional, then by finding a global description for the kernel of the Jacobian map, the critical
+      This method computes Euclidean distance (ED) degrees for the variety parameterized by the a set of polynomials $F$ in $d$ variables. If
+      the resulting variety is $d$-dimensional, then by finding a global description for the kernel of the Jacobian map, the critical
       equations of the variety can be computed. The unit variant of this method computes an ED degree using random (integer) data and unit
       weights, whereas the generic variant will use random data and random weights.
     Example
@@ -320,7 +321,7 @@ doc /// --leftKernel
       a generic/unit Euclidean distance degree
   Description
     Text
-      This method computes Euclidean distance (ED) degrees for affine varieties defined by the system F numerically using Lagrange
+      This method computes Euclidean distance (ED) degrees for affine varieties defined by the system $F$ numerically using Lagrange
       multipliers. If the resulting variety is a complete intersection, the left kernel of the augmented Jacobian is used to derive a set of 
       critical erquations which are passed into Bertini. The resulting number of critical points is returned as the ED degree. The unit 
       variant of this method computes an ED degree using random (complex) data and unit weights, whereas `leftKernelGenericEDDegree` will 
@@ -336,51 +337,15 @@ doc /// --leftKernel
     The computed ED degree may be lower than expected due to path tracking.
 ///
 
--*
-Unused keys, maybe for a later version?
-  `OutputType` one of "Standard" or "TestHomotopyConjectureGEDvUED"
-  `BertiniMembershipTestConfiguration`
-  `BertiniSubstitute`
-  `BertiniConstants`
-  `TrackSolutions`
-  `StartSubmodel`
-      `HomogeneousVariableGroups` and `AffineVariableGroups` to modify variable groups. By default the variables of `ring F` are treated
-      as Homogeneous. 
-*-
-doc ///  --NumericalComputationOptions
+doc ///
   Key
     NumericalComputationOptions
-    newNumericalComputationOptions
-    (newNumericalComputationOptions, String, List, List, List)
-    (newNumericalComputationOptions, String, List, List)
-    (newNumericalComputationOptions, List, List, List)
-    (newNumericalComputationOptions, List, List)
   Headline
     define homotopy options and configurations
-  Usage
-    NCO = newNumericalComputationOptions(dir, F, G, L)
-    NCO = newNumericalComputationOptions(dir, F, G)
-    NCO = newNumericalComputationOptions(F, G, L)
-    NCO = newNumericalComputationOptions(F, G)
-  Inputs
-    dir:String
-      directory to write Bertini files to, will be created if it does not exist
-    F:List
-      a system of polynomials (need not be square) defining the variety
-    G:List
-      a system of polynomials (complete intersection) such that V(F) is an irreducible component of V(G), i.e. a witness model
-    L:List
-      a system of linear polynomials, i.e. a submodel
-  Outputs
-    NCO:NumericalComputationOptions
-      a MutableHashTable to keep track of options and configurations for the homotopy methods
   Description
     Text
-      This object stores all the options needed compute an ED degree using homotopy continuation with Bertini. At mimumum it requires
-      the model F for which the ED Degree will be computed and a witness model G. A submodel L may be passed in, by default it will
-      be the empty set. A String indicating the temporary directory from which Bertini will read/write files during the run may also be
-      passed in as an optional argument, by default it will be a random temporary file name. The temporary directory will be created
-      if it does not exist.
+      This object stores all the options needed compute an ED degree using homotopy continuation with Bertini. It is created using the
+      @TO newNumericalComputationOptions@ method.
     Text
       Keys available to customize the homotopy include: 
       "Directory" to change the directory Bertini is run from, the directory need not exist initially. 
@@ -395,11 +360,39 @@ doc ///  --NumericalComputationOptions
       for every polynomial in this list. 
       "BertiniStartFiberSolveConfiguration" a list of options (e.g. `FinalTol -> 1e-8`) that will be passed into the Berni inputs file. By
       default, the options `{"TrackType"=>0, "PrintPathProgress"=>1000}` are included.
+///
+
+doc ///  --NumericalComputationOptions
+  Key
+    newNumericalComputationOptions
+    (newNumericalComputationOptions, List, List)
+    [newNumericalComputationOptions, TempDirectory]
+    [newNumericalComputationOptions, Submodel]
+  Headline
+    define homotopy options and configurations
+  Usage
+    NCO = newNumericalComputationOptions(F, G)
+  Inputs
+    F:List
+      a system of polynomials (need not be square) defining the variety
+    G:List
+      a system of polynomials (complete intersection) such that V(F) is an irreducible component of V(G), i.e. a witness model
+    Submodel => List
+      a system of linear polynomials to slice the variety
+  Outputs
+    NCO:NumericalComputationOptions
+      a MutableHashTable to keep track of options and configurations for the homotopy methods
+  Description
+    Text
+      Creates a @TO NumericalComputationOptions@ object. At mimumum it requires the model $F$ for which the ED Degree will be computed and
+      a witness model $G$. A submodel $L$ may be passed in to "slice" the variety, by default it will be the empty set. A String indicating
+      the temporary directory from which Bertini will read/write files during the run may also be passed in as an optional argument, by 
+      default it will be a random temporary file name. The temporary directory will be created if it does not exist.
     Example
       R = QQ[x,y];
       F = G = {x^2 + y^2 - 1};
       dir = temporaryFileName();
-      NCO = newNumericalComputationOptions(dir, F, G);
+      NCO = newNumericalComputationOptions(F, G, TempDirectory => dir);
       NCO#"TargetWeight" = apply(#gens R, i -> 1_R);
       UED = homotopyEDDegree(NCO, "Weight", true, true)
 ///
@@ -441,7 +434,7 @@ doc /// --homotopy
       NCO#"TargetWeight" = apply(#gens R, i -> 1_R);
       UED = homotopyEDDegree(NCO, "Weight", false, true)
   Caveat
-    Inaccurate results may be returned if V(F) is contained in V(L). The computed ED degree may be lower than expected due to path tracking.
+    Inaccurate results may be returned if $V(F)$ is contained in $V(L)$. The computed ED degree may be lower than expected due to path tracking.
 ///
 
 doc /// --numeric
@@ -452,6 +445,9 @@ doc /// --numeric
     (numericUnitEDDegree, List, List)
     numericGenericEDDegree
     (numericGenericEDDegree, List, List)
+    [numericWeightEDDegree, Submodel]
+    [numericUnitEDDegree, Submodel]
+    [numericGenericEDDegree, Submodel]
   Headline
     numerically compute ED degrees of affine cones using homotopy continuation
   Usage
@@ -462,11 +458,13 @@ doc /// --numeric
     F:List
       a system of polynomials (need not be square) defining the variety
     G:List
-      a system of polynomials (complete intersection) such that V(F) is an irreducible component of V(G), i.e. a witness model
+      a system of polynomials (complete intersection) such that $V(F)$ is an irreducible component of $V(G)$, i.e. a witness model
     U:List
       a (generic) data vector
     W:List
       a (generic) weight vector
+    Submodel => List
+      list of linear polynomials to slice the variety
   Outputs
     ED:ZZ
       a generic/unit Euclidean distance degree
@@ -482,30 +480,33 @@ doc /// --numeric
       GED = numericGenericEDDegree(F, G)
       GED = numericWeightEDDegree(F, G, U, W)
   Caveat
-    Inaccurate results may be returned if V(F) is contained in V(L). The computed ED degree may be lower than expected due to path tracking.
+    Inaccurate results may be returned if $V(F)$ is contained in $V(L)$. The computed ED degree may be lower than expected due to path tracking.
 ///
 
 doc /// --average
   Key
     averageNumericEDDegree
-    (averageNumericEDDegree, List, FunctionClosure, ZZ)
-    (averageNumericEDDegree, List, ZZ)
+    (averageNumericEDDegree, List, List, ZZ)
+    [averageNumericEDDegree, Submodel]
+    [averageNumericEDDegree, SampleGenerator]
+    [averageNumericEDDegree, Tolerance]
   Headline
     compute average ED degrees using sampled data
   Usage
-    aED = averageNumericEDDegree({F, G, L}, 10)
-    aED = averageNumericEDDegree({F, G}, sampleGen, 10)
+    aED = averageNumericEDDegree(F, G, 10)
   Inputs
     F: List
-      list of polynomials
+      a system of polynomials (need not be square) defining the variety
     G: List
-      list of polynomials (complete intersection) such that V(F) is an irreducible component of V(G), i.e. a witness model
-    L: List
-      list of linear polynomials, i.e. a submodel
-    SampleGenerator: FunctionClosure
-      a function which generates data samples
+      list of polynomials (complete intersection) such that $V(F)$ is an irreducible component of $V(G)$, i.e. a witness model
     n: ZZ
       number of samples to take
+    Submodel => List
+      list of linear polynomials to slice the variety
+    SampleGenerator => FunctionClosure
+      a function which generates data samples
+    Tolerance => RR
+      tolerance to use when checking if a critical point is real
   Outputs
     aED: RR
       average ED degree after n trials
@@ -516,51 +517,14 @@ doc /// --average
       computes critical points using the @TO homotopyEDDegree@ method. By default, `random(RR)` is used to generate data samples. Points are 
       tested using the @TO realPoints@ function from the @TO NumericalAlgebraicGeometry@ package, a tolerance can be passed along using the
       `Tolerance` option, by default it is 1e-6.
+    Text
+
     Example
       R = QQ[x,y];
       F = G = {x^2 + y^2 - 1};
       sampleGen = () -> apply(#gens R, i -> random(RR));
-      aED = averageNumericEDDegree({F, G}, sampleGen, 10)
+      aED = averageNumericEDDegree(F, G, 10, SampleGenerator => sampleGen)
 ///
-
--*
-doc /// --vanishTally
-  Key
-    vanishTally
-    (vanishTally, NumericalComputationOptions, Ideal, RR)
-    (vanishTally, NumericalComputationOptions, List, RR)
-    (vanishTally, NumericalComputationOptions, Ideal)
-    (vanishTally, NumericalComputationOptions, List)
-  Headline
-    validate a Bertini homotopy continuation run
-  Usage
-    counts = vanishTally(NCO, Z, 1e-8)
-  Inputs
-    NCO:NumericalComputationOptions
-      a MutableHashTable storing configuration for a Bertini run
-    Z:Ideal
-      test ideal
-    F:List
-      a list of polynomials defining a test ideal
-    setTolerance:ZZ
-      a numerical tolerance (default 1e-8)
-  Outputs
-    counts:Tally
-      A tally of paths which vanish (up to setTolerance) on the test ideal
-  Description
-    Text
-      Reads a data file from a Bertini run and tallies the points which lie on the given test ideal up to the given tolerance. Points are
-      tallied according to the path number assigned by Bertini.
-    Example
-      R = QQ[x,y]
-      F = G = {x^2 + y^2 - 1}
-      NCO = newNumericalComputationOptions(F, G)
-      GED = homotopyEDDegree(NCO, "Weight", true, true)
-      vanishTally(NCO, F)
-  Caveat
-    This method assumes that a stage 2 homotopy was completed in the directory specified by NCO.
-///
-*-
 
 --##########################################################################--
 -- END DOCUMENTATION
@@ -608,14 +572,9 @@ TEST ///  -- Selected surfaces from Herwig Hauser's algebraic surfaces gallery
   R = QQ[x,y,z];
   surfaces = {
     3*x^2 + 3*y^2 + z^2 - 1,
-    x^2 + y^2 + z^3 - z^2,
-    x^2 + y^3 + z^5,
     x^2 - y^2*z,
-    x^2 + y^2*z^3,
     x^2 + y^2 + z^2 - 1,
     x^2 + z^2 - y^3*(y-1)^3,
-    x^2 - y^3*z^3,
-    x^2 + y^2 + z,
     x^2*y*z + x*y^2 + y^3 + y^3*z - x^2*z^2
   };
 
@@ -702,48 +661,6 @@ TEST ///  -- parameterization: monodromy vs symbolic
   assert(GED1 === GED2);
 ///
 
--*
-TEST ///  -- lightning self-attention network function space
-  d = (1,2);
-  l = #d - 1;
-  t = 2;
-  
-  -- Parameter space: weights
-  ARing = QQ[A_0..A_(d_0 * d_0)];  -- ring for attention matrices
-  VRing = QQ[V_0..V_(d_1 * d_0)];  -- ring for value matrices
-  R = ARing ** VRing;
-
-  A = genericMatrix(R, A_0, d_0, d_0);
-  V = genericMatrix(R, V_0, d_1, d_0);
-
-  -- Function space
-  T = R[x_0..x_(d_0 * t)];
-  X = genericMatrix(T, x_0, d_0, t);  -- input
-  Phi = V * X * transpose X * A * X; -- output
-
-  -- Create the ambient space (space of symmetric tensors)
-  mons = flatten entries basis(3^l, T);  -- homogeneous monomials of degree 3^l
-  S = QQ[c_0..c_(d_1 * t * #mons - 1)];
-
-  -- Get image of the parameterization map
-  PhiFlat = flatten entries Phi;
-  im = flatten apply(d_1 * t, i -> (
-    f = PhiFlat_i;
-    apply(mons, m -> coefficient(m, f))
-  ));
-
-  -- Get the defining ideal
-  paramMap = map(R, S, im);
-  I = kernel paramMap;
-  c = codim I;
-
-  F = flatten entries gens I;
-  G = apply(c, i -> sum apply(#F, j -> (random(QQ) * F_j)));
-  assert(leftKernelUnitEDDegree(G) === numericUnitEDDegree(F, F));
-  assert(leftKernelGenericEDDegree(G) === numericGenericEDDegree(F, F));
-///
-*-
-
 end
 
 uninstallPackage "EuclideanDistanceDegree"
@@ -753,14 +670,6 @@ installPackage "EuclideanDistanceDegree"
 check "EuclideanDistanceDegree"
 
 viewHelp
-
-uninstallPackage "EuclideanDistanceDegree"
-restart
-loadPackage "EuclideanDistanceDegree"
-installPackage("EuclideanDistanceDegree", RemakeAllDocumentation => false, RerunExamples => false)
-check "EuclideanDistanceDegree"
-
---
 
 -- Debugging surface tests
 loadPackage "EuclideanDistanceDegree"

@@ -26,16 +26,18 @@ fixValues = {"FixedData", "FixedWeight", "FixedSubmodel", "FixedJacobianSubmodel
 nocKeys = parameterKeys|jacKeys|modelKeys|degreeKeys|bertiniKeys|coordinateKeys|planeKeys|variableKeys
 nocKeys = nocKeys|directoryKeys|solutionKeys|outputKeys|fixValues
 
-newNumericalComputationOptions = method(Options => { })
-newNumericalComputationOptions(String, List, List, List) := o -> (dir, F, G, L) -> (
+newNumericalComputationOptions = method(Options => { TempDirectory => null, Submodel => {}})
+newNumericalComputationOptions(List, List) := o -> (F, G) -> (
     NCO := new NumericalComputationOptions from apply(nocKeys, i -> i=>null);
 
     -- Temp directory for Bertini input file
-    NCO#"Directory"=dir;
+    if o.TempDirectory =!= null then dir := o.TempDirectory else dir = temporaryFileName();
+    NCO#"Directory" = dir;
 
     -- Model keys
     NCO#"Model"=F;
     NCO#"WitnessModel"=G;
+    L := o.Submodel;
     NCO#"StartSubmodel"=L;
     NCO#"TargetSubmodel"=L;
 
@@ -84,9 +86,6 @@ newNumericalComputationOptions(String, List, List, List) := o -> (dir, F, G, L) 
 
     return NCO
 )
-newNumericalComputationOptions(String, List, List) := o -> (dir, F, G) -> newNumericalComputationOptions(dir, F, G, {})
-newNumericalComputationOptions(List, List, List) := o -> (F, G, L) -> newNumericalComputationOptions(temporaryFileName(), F, G, L)
-newNumericalComputationOptions(List, List) := o -> (F, G) -> newNumericalComputationOptions(F, G, {})
 
 --##########################################################################--
 -- Homotopy ED Degree method
@@ -616,12 +615,10 @@ homotopyEDDegree(NumericalComputationOptions, String, Boolean, Boolean) := (NCO,
 --##########################################################################--
 -- Numerical ED Degree Methods
 --##########################################################################--
-numericalOptions = { TempDirectory => null }
+numericalOptions = { TempDirectory => null, Submodel => {} }
 numericWeightEDDegree = method(Options => numericalOptions)
 numericWeightEDDegree(List, List, List, List) := o -> (F, G, data, weight) -> (
-    dir := "";
-    if o.TempDirectory === null then dir = temporaryFileName() else dir = o.TempDirectory;
-    NCO := newNumericalComputationOptions(dir, F, G);
+    NCO := newNumericalComputationOptions(F, G, o);
     NCO#"StartWeight" = weight;
     NCO#"TargetData" = NCO#"StartData" = data;
     homotopyEDDegree(NCO, "Weight", true, false)
@@ -643,12 +640,15 @@ numericGenericEDDegree(List, List) := o -> (F, G) -> numericWeightEDDegree(
     o
 )
 
-aEDOptions = { TempDirectory => null, Tolerance => 1e-6 }
+aEDOptions = { TempDirectory => null, Tolerance => 1e-6, Submodel => {}, SampleGenerator => null }
 averageNumericEDDegree = method(Options => aEDOptions)
-averageNumericEDDegree(List, FunctionClosure, ZZ) := o -> (P, SampleGenerator, n) -> (
-    if #P == 3 then (F, G, L) := (P_0, P_1, P_2) else (F, G, L) = (P_0, P_1, {});
-    dir := temporaryFileName();
-    if o.TempDirectory =!= null then dir = o.TempDirectory;
+averageNumericEDDegree(List, List, ZZ) := o -> (F, G, n) -> (
+    if o.Submodel =!= null then L := o.Submodel else L = {};
+    if o.TempDirectory =!= null then dir := o.TempDirectory else dir = temporaryFileName();
+    if o.SampleGenerator =!= null then 
+        SampleGenerator := o.SampleGenerator 
+    else
+        SampleGenerator = () -> apply(#gens ring first F, i -> randomRR());
 
     -- Initial run
     R := ring first F;
@@ -669,26 +669,6 @@ averageNumericEDDegree(List, FunctionClosure, ZZ) := o -> (P, SampleGenerator, n
     );
     numeric(avgEDDeg/n)
 )
-averageNumericEDDegree(List, ZZ) := o -> (P, n) -> (
-    sampleGen := () -> apply(#gens ring first first P, i -> randomRR());
-    averageNumericEDDegree(P, sampleGen, n, o)
-)
-
-vanishTally = method() 
-vanishTally(NumericalComputationOptions, Ideal, RR) := (NCO, Z, setTolerance) -> (
-    limitPoints := importMainDataFile(NCO#"Directory", NameMainDataFile => "stageTwo_main_data");
-    (F, G) := (NCO#"Model", NCO#"WitnessModel");    
-    S := CC[gens ring first F];
-    return tally apply(#limitPoints, s -> (	    
-        p := limitPoints#s;
-        X := drop(drop(p#Coordinates, #G+1), -1);
-        xSub := apply(gens S, X, (i,j) -> i=>j);
-        if setTolerance > norm sub(sub(gens Z,S), xSub) then {p#PathNumber}|p#PathsWithSameEndpoint else null 
-    ))
-)   
-vanishTally(NumericalComputationOptions, Ideal) := (NCO, Z) -> vanishTally(NCO, Z, 1e-8)
-vanishTally(NumericalComputationOptions, List, RR) := (NCO, F, setTolerance) -> vanishTally(NCO, ideal F, setTolerance)
-vanishTally(NumericalComputationOptions, List) := (NCO, F) -> vanishTally(NCO, ideal F)
 
 end
 
