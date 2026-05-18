@@ -10,21 +10,14 @@ newPackage(
     Email => "whuang259@wisc.edu",
     HomePage => ""}
   },
-  Headline => "Produces equations and computes ED degrees. ",
-  --DebuggingMode => false, -- turn off for release builds
-  DebuggingMode => true,
+  Headline => "Euclidean Distance Degrees",
+  DebuggingMode => false,
   AuxiliaryFiles => false,
   PackageImports => {"SimpleDoc","Bertini","NumericalAlgebraicGeometry","Elimination","MonodromySolver"},
   PackageExports => {"Bertini","NumericalAlgebraicGeometry"},
-  Configuration => {
-    --"RandomCoefficients"=>CC,
-    "Continuation"=>Bertini },
+  Configuration => { "Continuation"=>Bertini },
   CacheExampleOutput => false
 )
-
---path=prepend("/Users/joserodriguez/Documents/GitHub/EuclideanDistanceDegree",path)
---loadPackage("EuclideanDistanceDegree",Reload=>true)
---restart
  
 randomCC=()->random CC
 randCC=()->random CC
@@ -63,9 +56,6 @@ export {
   "averageNumericEDDegree"
 }
 
-----------------------------------------------------------------------------------------------------------------
-----------------------------------------------------------------------------------------------------------------
-
 --##########################################################################--
 -- INTERNAL METHODS
 --##########################################################################--
@@ -90,11 +80,11 @@ sortPointFunction = (aSol) -> (if not (apply(aSol,i->{realPart i,imaginaryPart i
 
 beginDocumentation()
 
-doc /// --EuclideanDistanceDegree Package 
+doc /// -- Package 
   Key
     EuclideanDistanceDegree 
   Headline
-    compute Euclidean distance degrees of varieties
+    product critical equations and compute ED degrees
   Description
     Text
       The Euclidean distance (ED) degree of a varieties arises from the following problem: given a (generic) data point, find the point on a
@@ -145,7 +135,7 @@ doc /// --EuclideanDistanceDegree Package
       homotopyEDDegree(NCO, "Weight", true, true)
 ///
 
-doc /// --symbolic
+doc /// -- symbolic
   Key
     ReturnCriticalIdeal
     [symbolicWeightEDDegree, ReturnCriticalIdeal]
@@ -208,7 +198,7 @@ doc ///
       ICP = symbolicWeightEDDegree(F, U, W, ReturnCriticalIdeal => true)
 ///
 
-doc /// --parameterized
+doc /// -- parameterized
   Key
     UseMonodromy
     [parameterizedWeightEDDegree, UseMonodromy]
@@ -258,9 +248,9 @@ doc ///
   Description
     Text
       This method computes Euclidean distance (ED) degrees for the variety parameterized by the a set of polynomials $F$ in $d$ variables. If
-      the resulting variety is $d$-dimensional, then by finding a global description for the kernel of the Jacobian map, the critical
-      equations of the variety can be computed. The unit variant of this method computes an ED degree using random (integer) data and unit
-      weights, whereas the generic variant will use random data and random weights.
+      the resulting variety is $d$-dimensional, then by finding a global description for the kernel of the transpose of the Jacobian map, the
+      critical equations of the variety can be computed. The unit variant of this method computes an ED degree using random (integer) data 
+      and unit weights, whereas the generic variant will use random data and random weights.
     Example
       R = QQ[x,y];
       F = {x^2 + 1, x * y, y - 1};
@@ -270,7 +260,7 @@ doc ///
       GED = parameterizedWeightEDDegree(F, U, W)
 ///
 
-doc /// --TempDirectory
+doc /// -- TempDirectory
   Key
     TempDirectory
     [leftKernelWeightEDDegree, TempDirectory]
@@ -295,7 +285,7 @@ doc /// --TempDirectory
       GED = leftKernelGenericEDDegree(F, TempDirectory => dir)
 ///
 
-doc /// --leftKernel
+doc /// -- leftKernel
   Key
     leftKernelWeightEDDegree
     (leftKernelWeightEDDegree, List, List, List)
@@ -337,7 +327,7 @@ doc /// --leftKernel
     The computed ED degree may be lower than expected due to path tracking.
 ///
 
-doc ///
+doc ///  -- NumericalComputationOptions
   Key
     NumericalComputationOptions
   Headline
@@ -362,7 +352,7 @@ doc ///
       default, the options `{"TrackType"=>0, "PrintPathProgress"=>1000}` are included.
 ///
 
-doc ///  --NumericalComputationOptions
+doc ///
   Key
     newNumericalComputationOptions
     (newNumericalComputationOptions, List, List)
@@ -397,7 +387,7 @@ doc ///  --NumericalComputationOptions
       UED = homotopyEDDegree(NCO, "Weight", true, true)
 ///
 
-doc /// --homotopy
+doc /// -- homotopy
   Key
     homotopyEDDegree   
     (homotopyEDDegree, NumericalComputationOptions, String, Boolean, Boolean)
@@ -437,7 +427,7 @@ doc /// --homotopy
     Inaccurate results may be returned if $V(F)$ is contained in $V(L)$. The computed ED degree may be lower than expected due to path tracking.
 ///
 
-doc /// --numeric
+doc /// -- numeric
   Key
     numericWeightEDDegree
     (numericWeightEDDegree, List, List, List, List)
@@ -483,7 +473,7 @@ doc /// --numeric
     Inaccurate results may be returned if $V(F)$ is contained in $V(L)$. The computed ED degree may be lower than expected due to path tracking.
 ///
 
-doc /// --average
+doc /// -- average
   Key
     averageNumericEDDegree
     (averageNumericEDDegree, List, List, ZZ)
@@ -566,7 +556,6 @@ TEST /// -- basic examples
   assert(numericUnitEDDegree(F, G) === 2);
 ///
 
--- https://homepage.univie.ac.at/herwig.hauser/bildergalerie/gallery.html
 TEST ///  -- Selected surfaces from Herwig Hauser's algebraic surfaces gallery
   setRandomSeed(123);
   R = QQ[x,y,z];
@@ -663,6 +652,8 @@ TEST ///  -- parameterization: monodromy vs symbolic
 
 end
 
+
+
 uninstallPackage "EuclideanDistanceDegree"
 restart
 loadPackage "EuclideanDistanceDegree"
@@ -671,7 +662,7 @@ check "EuclideanDistanceDegree"
 
 viewHelp
 
--- Debugging surface tests
+-- Debugging surface test seed issue
 loadPackage "EuclideanDistanceDegree"
 setRandomSeed(123);
 R = QQ[x,y,z];

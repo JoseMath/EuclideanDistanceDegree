@@ -1,4 +1,3 @@
---restart
 --Projective formulation for intersections with linear spaces
 rand := randomValue
 (stageOne,stageTwo) = (1,2); 
@@ -87,42 +86,6 @@ newNumericalComputationOptions(List, List) := o -> (F, G) -> (
     return NCO
 )
 
---##########################################################################--
--- Homotopy ED Degree method
---##########################################################################--
-
--- homotopyEDDegree
--- ------------------------------------------------------------------------
--- Purpose:
---   Orchestrates a two-stage parameter homotopy for ED degree computations
---   using Bertini, given a highly configurable NumericalComputationOptions (NCO).
---   The homotopy may vary weights ("Weight"), data ("Data"), or (intended)
---   submodel ("Submodel") parameters.
---
--- Inputs:
---   NCO : NumericalComputationOptions (a MutableHashTable) that contains:
---         - Model (F)                   : List of defining polynomials for the target variety
---         - WitnessModel (G)           : List of polynomials forming a CI containing F
---         - Start/TargetSubmodel (L)   : Additional equations (may be {})
---         - Fixed* keys                 : Which entries (Start vs Target) to use for a run
---         - Start/TargetData, Start/TargetWeight : parameter vectors (length = # variables)
---         - DegreeSubmodel, DegreeWitnessModel   : degrees of submodel and witness equations
---         - PrimalCoordinates (xList)            : variable tuple for the ambient space
---         - JacobianVars/GradientVars/ScaleVars/DataVars/WeightVars : symbol names for
---           the corresponding variable blocks in the symbolic ring used to build systems
---         - Infinity: optional Bertini section for homogenization (created if null)
---         - Directory: scratch/output directory for all Bertini IO
---         - (many other keys; see newNumericalComputationOptions)
---
---   ht         : String in {"Weight","Data","Submodel"} selecting the parameter homotopy.
---   isStageOne : Boolean; if true, run stage 1 solve.
---   isStageTwo : Boolean; if true, run stage 2 solve (and then filter/return counts).
---
--- Output:
---   The function returns the number of surviving critical points at the last stage
---   that was executed: stage 1 (index 1) or stage 2 (index 2), taken from
---   stageEDDegBound (a 3-entry MutableList).
-
 possibleHT = {"Weight", "Data", "Submodel"}
 stageOne=1
 stageTwo=2
@@ -131,23 +94,14 @@ isStageOne=true
 isStageTwo=true
 
 homotopyEDDegree = method()
-homotopyEDDegree(NumericalComputationOptions, String, Boolean, Boolean) := (NCO, ht, isStageOne, isStageTwo) -> (    
-    ------------------------------------------------------------------------
-    -- (CODE 1) Determine which parameter family the homotopy will vary.
-    --           Exactly one of weightHomotopy/dataHomotopy/submodelHomotopy is true.
-    ------------------------------------------------------------------------
+homotopyEDDegree(NumericalComputationOptions, String, Boolean, Boolean) := (NCO, ht, isStageOne, isStageTwo) -> (
     if not member(ht,possibleHT) then error("Argument 1 is not in "|toString possibleHT);
     weightHomotopy := ht === possibleHT_0;
     dataHomotopy := ht === possibleHT_1;
     submodelHomotopy := ht === possibleHT_2;
 
-    -- Set up directory
     if not fileExists NCO#"Directory" then mkdir NCO#"Directory";
 
-   ------------------------------------------------------------------------
-    -- (CODE 2) Extract all required configuration from NCO.
-    --           Fixed* keys point to which version ("Start*" or "Target*") to use.
-    ------------------------------------------------------------------------
     jacL := NCO#(NCO#"FixedJacobianSubmodel");
     L := NCO#(NCO#"FixedSubmodel");
     startWeight := NCO#"StartWeight";
@@ -172,22 +126,9 @@ homotopyEDDegree(NumericalComputationOptions, String, Boolean, Boolean) := (NCO,
     -- Ensure a hyperplane at infinity section is set; create it if missing.
     if NCO#"Infinity" === null then NCO#"Infinity" = makeB'Section(xList, NameB'Section=>"HX");
 
-    ------------------------------------------------------------------------
-    -- (FUNCTION 0) Helper: create a polynomial ring with numVars variables
-    --              using symbol base 's' over coefficient ring 'kk'.
-    ------------------------------------------------------------------------
     vRing := (numVars,s,kk) -> kk[apply(numVars,i->s|i)];   
 
-    ------------------------------------------------------------------------
-    -- (CODE 3) Build the extrinsic symbolic ring and block variables.
-    --          This ring hosts:
-    --            - Symbolic Jacobian entries (jv blocks indexed by rows/columns)
-    --            - Scale variables (sv) for Lagrange multipliers
-    --            - Gradient variables (gv)
-    --            - Data (dv) and Weight (wv) variable placeholders
-    --          Note: the 'basis({...}, ring)' calls below expect those blocks to be
-    --          identifiable by degree; in practice, we are using them to select blocks.
-    ------------------------------------------------------------------------
+    -- Build extensic symbolic ring
     nc := #xList;
     kk0 := QQ; 
     extrinsicRing := kk0[flatten transpose apply(#G+#L,i->apply(nc,j->jv|i|"v"|j))];
@@ -200,16 +141,7 @@ homotopyEDDegree(NumericalComputationOptions, String, Boolean, Boolean) := (NCO,
     -- symbolicSystem is the model system: (Scale) * (Gradient || Jacobian) that we want to solve
     -- to be specialized by pairing functions below.
     symbolicSystem := symbolicScaleMatrix*(symbolicGradient||symbolicJac);
-
-    ------------------------------------------------------------------------
-    -- (FUNCTION 1) Pair a row of a matrix with numeric/polynomial values.
-    --   M1 : matrix of symbolic variables (e.g., a row of 'symbolicJac')
-    --   M2 : matrix of actual polynomials/values to substitute
-    --   hom: homogenizing variable name for Bertini (e.g., "HX")
-    --   Behavior:
-    --     - If val_i == 0, record arg_i => 0 in 'jacZero' and substitute into symbolicSystem.
-    --     - Else, create a Bertini section binding NameB'Section=arg_i to val_i with one coefficient.
-    ------------------------------------------------------------------------
+    
     jacZero:={};
     pairJac:={};
     pairRowFunction := (M1, M2, hom) -> (
@@ -227,18 +159,7 @@ homotopyEDDegree(NumericalComputationOptions, String, Boolean, Boolean) := (NCO,
             )}
         )
     );
-    -- Example:
-    --   M1 = matrix{{x,y},{z,w}} ; M2 = matrix{{1,2},{5,4}} ; pairRowFunction(M1,M2,"HX")
-
-    ------------------------------------------------------------------------
-    -- (FUNCTION 2) Pair a parameter vector for a parameter homotopy.
-    --   p0,p1 : start and target parameter vectors (same length)
-    --   r1,r2 : strings representing (1-T) and (T) coefficient symbols for Bertini
-    --   sym   : the symbolic parameter vector (matches length of p0 and p1)
-    --   bool  : whether to do a homotopy (true) or hold fixed at start (false)
-    --   Returns:
-    --     a list of B'Sections (one per component) binding sym_i to p0_i (and p1_i if homotopy).
-    ------------------------------------------------------------------------
+    
     pairParameterFunction := (p0,p1,r1,r2,sym,bool) -> (
 	    if bool then apply(#p0,
             --- for each i we encode an equation like sym_i = p_0_i* r1+p1_i*r2,
@@ -258,25 +179,12 @@ homotopyEDDegree(NumericalComputationOptions, String, Boolean, Boolean) := (NCO,
         ))
 	);	
 
-    ------------------------------------------------------------------------
-    -- (CODE 4) Pair symbolic Data/Weight with their start/target values.
-    --          These define the parameter homotopies controlled by 'ht'.
-    ------------------------------------------------------------------------
+    -- Pair symbolic vars with their start/target values and set up the homotopy between them
     weight := symbolicWeight := gens vRing(nc,wv,kk0);
     data := symbolicData := gens vRing(nc,dv,kk0);
     pairData := pairParameterFunction(startData,targetData, "(1-TData)","TData", symbolicData, dataHomotopy);	    
     pairWeight := pairParameterFunction(startWeight,targetWeight, "(1-TWeight)","TWeight", symbolicWeight, weightHomotopy);
 
-    --print ("pairData", peek first pairData);
-    --print ("pairWeight", peek first pairWeight);
-
-    ------------------------------------------------------------------------
-    -- (CODE 5) Pair the gradient vector:
-    --   For each coordinate, define a section that encodes the ED gradient equation
-    --   with ContainsPoint => {data_i}, Weight => {weight_i}, and homogenization "HX".
-    --   topNumerHB / topDenomQ / topTWeight are extracted from a  parameter ring,
-    --   but not used further (kept for possible extensions).
-    ------------------------------------------------------------------------
     kk2 := ring first startWeight;
     topS := kk2[numerHB,denomQ,tWeight];
     (topNumerHB,topDenomQ,topTWeight) := toSequence flatten entries basis({1},topS);
@@ -289,12 +197,7 @@ homotopyEDDegree(NumericalComputationOptions, String, Boolean, Boolean) := (NCO,
 	    B'Homogenization=>"HX"
     ));
 
-    ------------------------------------------------------------------------
-    -- (CODE 6) Pair the Jacobian rows:
-    --   - Build a homogenized copy of L|G in a ring with HX
-    --   - Differentiate each homogenized equation w.r.t. each variable to form homogJac
-    --   - Pair rows of symbolicJac with values from homogJac
-    ------------------------------------------------------------------------
+    -- Homogenize and pair the Jacobian
     jacLG := jacL||jacG;
     kk3 := coefficientRing ring first F;
     jacRing := kk3[gens ring first F|{"HX"}];
@@ -303,14 +206,8 @@ homotopyEDDegree(NumericalComputationOptions, String, Boolean, Boolean) := (NCO,
     homogLG := homogenize(sub(matrix{L|G},jacRing), HX) // entries // flatten;
     homogJac := matrix apply(numrows jacLG,i->apply(numcols jacLG,j->diff((gens jacRing)_j,homogLG_i)));
     pairRowFunction(symbolicJac, homogJac, "HX");
-    -- print("homogenized jacobian",homogJac);
 
-    ------------------------------------------------------------------------
-    -- (CODE 7) Pair scaling variables (Lagrange multipliers) for column homogenization:
-    --   - Compute rescaling degrees per column to balance Jacobian columns
-    --   - Create a list of new "generic hyperplanes" and pair them as Bertini sections
-    --   - Build the diagonal scaling (pairScale) binding each scale slot with its product
-    ------------------------------------------------------------------------
+    -- Pair lagrange multipliers for column homogenization
     (degSubmodel,degWitnessModel) := (NCO#"DegreeSubmodel",NCO#"DegreeWitnessModel");
     degAugJac := {1} | apply(degSubmodel|degWitnessModel, i -> i-1);
     maxDegree := degAugJac//max;
@@ -339,28 +236,15 @@ homotopyEDDegree(NumericalComputationOptions, String, Boolean, Boolean) := (NCO,
         );
         NCO#"PairGeneralHyperplaneList"=pairGeneralHyperplanes
     );
-    --print(peek first pairGeneralHyperplanes);
 
     -- Connect each scale slot with the corresponding homogenizing product.
     pairScale := apply(flatten entries symbolicScaleMatrix, rescaling, (i,j) -> i=>j);
     
-    ------------------------------------------------------------------------
-    -- (CODE 8) Compose Bertini inputs:
-    --   - Variable groups, polynomials, constants, configuration (including regeneration)
-    --   - BF is the full list of paired functions/constants used across writes
-    ------------------------------------------------------------------------
     bModelVars := gens ring first F|{"HX"};
     bPoly := homogLG|flatten entries symbolicSystem;
     bConfiguration := {"TrackType"=>0, "PrintPathProgress"=>1000} | (NCO#"BertiniStartFiberSolveConfiguration");    
     BF := pairData|pairWeight|pairJac|pairGradient|pairGeneralHyperplanes|pairScale;
 
-    ------------------------------------------------------------------------
-    -- (FUNCTIONS 2) Solve helpers: write Bertini input and run it for a stage.
-    --   Stage behavior:
-    --     - Stage 1: ParameterHomotopy=1, UseRegeneration=1, parameters fixed at 0
-    --     - Stage 2: ParameterHomotopy=2, UseRegeneration=0, with parameter path files
-    --   Note: PG is a placeholder in stage 1 (no active parameter); BC sets TData/TWeight.
-    ------------------------------------------------------------------------
     writeSolveInputFunction := (stage,nif) -> (
         if stage===stageOne then (
             PG:={"adfadfdf"};
@@ -462,24 +346,14 @@ homotopyEDDegree(NumericalComputationOptions, String, Boolean, Boolean) := (NCO,
         moveB'File(NCO#"Directory","bertini_session.log","bertini_session_"|nif|".log",CopyB'File => false);
 
         outIM := importIncidenceMatrix(NCO#"Directory");
-        --print("Membership tests",nif);	
-        --print outIM;
         return outIM
     );
     
-    ------------------------------------------------------------------------
-    -- (FUNCTIONS 4) Filtering using incidence matrix output.
-    --   - filterSolutionFunction: rewrite "member_points" to only include selected
-    --     solutions (by indices kp), preserving Bertini's line grouping.
-    --   - positionFilterFunction: run membership test on a single polynomial, decide
-    --     which solutions to KEEP (typeB) or DROP (typeA), rewrite "member_points",
-    --     and return the number of retained solutions.
-    ------------------------------------------------------------------------
+    -- Filter points using incidence matrix
     filterSolutionFunction:=(nsf,kp,ns,numCoords)->(
         -- member_points structure assumption: first line header, then groups
         -- of (1 + numCoords) lines per solution. Only selected solutions are kept.
-	    
-        -- print("RUN FILTER",kp=>numCoords);    
+	      
     	firstLine := true;
     	countSol := 0;
     	countLine := 0;
@@ -497,8 +371,6 @@ homotopyEDDegree(NumericalComputationOptions, String, Boolean, Boolean) := (NCO,
                 countLine = countLine+1;
                 if isSelected then sf << ell << endl;
                 if countLine == groupSize then (
-                    --print(countSol => isSelected);    	    	
-                    --print (countLine,groupSize,"grp");
                     countLine = 0; 
                     countSol = countSol+1;
                 )
@@ -515,13 +387,7 @@ homotopyEDDegree(NumericalComputationOptions, String, Boolean, Boolean) := (NCO,
     --   indexCase : index within the polyList
     --   hypersurface : polynomial to test
     --   bin     : "typeA" (drop if ON hypersurface) or "typeB" (keep only if ON)
-
-    --filterSolutionFunction("T1",{1,2,3,4,5,6,7},8)
-    --	saturateFunction=positionFunction=positionFilterFunction;
     positionFilterFunction := (stage,case,indexCase,hypersurface,bin) -> (
-        --(stage,case,indexCase,hypersurface)
-        --isMembershipFunction(stage,case,indexCase,hypersurface);
-        --(kp,ns):=positionMembershipFunction(stage,case,indexCase,hypersurface);
     	if bin==="typeA" then isOffHypersurface := (m->(m==={}))
     	else if bin==="typeB" then isOffHypersurface = (m->(m=!={}))
 	    else error"last argument is typeA or typeB";
@@ -532,7 +398,6 @@ homotopyEDDegree(NumericalComputationOptions, String, Boolean, Boolean) := (NCO,
 
     	ns:= #imMT;
 	    (nsf,nc) := ("filterFile", #flatten {bLagrangeVars,bModelVars});
-    	--print("Filter",kp,"num kp",#kp,"num sols",ns,"num coordinates",nc,bin);
 
 	    filterSolutionFunction("filterFile",kp,ns,nc);
     	moveB'File(NCO#"Directory","filterFile","member_points",CopyB'File=>true);
@@ -541,59 +406,30 @@ homotopyEDDegree(NumericalComputationOptions, String, Boolean, Boolean) := (NCO,
 
     -- stageEDDegBound holds a label and the counts after stage1 and stage2 filtering.
     stageEDDegBound:=new MutableList from {"GEDvUED",null,null};
-    
-    ------------------------------------------------------------------------
-    -- (FUNCTIONS 5)  filtering helpers.
-    --   runSaturateUnionFunction(polyList, stage):
-    --     For each polynomial in 'offPolyList', DROP solutions that lie on it (typeA).
-    -- (FUNCTIONS 6) Functions to restrict to the variety 
-    --   runRestrictIntersectionFunction(polyList, stage):
-    --     For each polynomial in 'onPolyList', KEEP only solutions that lie on it (typeB).
-    ------------------------------------------------------------------------
+
+    -- Drop solutions that lie on offPolyList
     runSaturateUnionFunction:=(polyList,stage)->(
-    	--print("Remove critical points from member_points where any of these polynomials vanish",polyList);
     	(case,bin) := ("SaturateH","typeA");
     	scan(#polyList,i->(
             stageEDDegBound#stage = positionFilterFunction(stageOne,case,i,polyList_i,bin);
-            --print(peek stageEDDegBound,"Saturate by polynomial"=>polyList_i)
         ));	 
-    	--print(peek stageEDDegBound)
     );
 
+    -- Keep only solutions that lie on onPolyList
     runRestrictIntersectionFunction:=(polyList,stage)->(
-    	--print("Only keeping critical points from member_points where every one of these polynomials vanish",polyList);
     	(case, bin) := ("IntersectF", "typeB");
     	scan(#polyList, i -> (
 		    stageEDDegBound#stage = positionFilterFunction(stageOne, case, i, polyList_i, bin);
-		    --print(peek stageEDDegBound,"Vanish polynomial"=>polyList_i)
-        ));	 
-    	--print(peek stageEDDegBound)
+        ));
     );
     
-    ------------------------------------------------------------------------
-    -- (FUNCTION 7) Stage runner:
-    --   - Run solve for the stage (writes input, runs Bertini, organizes outputs)
-    --   - Apply "off" saturation (drop residuals) and "on" restrictions (enforce F)
-    --   - In stage 2, optionally apply finer restrictions (if provided)
-    ------------------------------------------------------------------------
     runComputationStage:=(stage,offPolyList,onPolyList)->(
         if stage==stageOne then runSolveInputFunction(stageOne,"input_first_solve")
         else runSolveInputFunction(stageTwo,"input_second_solve");
-        --print("offPolyList",offPolyList);
 
         if stage===stageOne or NCO#"OutputType"=!="TestHomotopyConjectureGEDvUED" then runSaturateUnionFunction(offPolyList,stage);
-        --print("WIN","SATURATE");
-        --moveB'File(NCO#"Directory","member_points","filterFile",CopyB'File=>true);
-        --print("onPolyList",onPolyList);
-
         runRestrictIntersectionFunction(onPolyList,stage);
-        --print("WIN","RESTRICT");
-
-        if stage===stageTwo and NCO#"FinerRestriction"=!={} then(
-            --print("In stage 2, keep the critical points where each of these polynomials vanish ",NCO#"FinerRestriction");
-            runRestrictIntersectionFunction(NCO#"FinerRestriction",stage)
-        );
-        -- print("We have completed stage ",stage)
+        if stage===stageTwo and NCO#"FinerRestriction"=!={} then runRestrictIntersectionFunction(NCO#"FinerRestriction",stage);
     ); 
 
     -- Polynomials that should vanish (onPolyList) or should not vanish (offPolyList).
@@ -612,9 +448,6 @@ homotopyEDDegree(NumericalComputationOptions, String, Boolean, Boolean) := (NCO,
     if isStageTwo then return stageEDDegBound#2 else if isStageOne then return stageEDDegBound#1
 )
 
---##########################################################################--
--- Numerical ED Degree Methods
---##########################################################################--
 numericalOptions = { TempDirectory => null, Submodel => {} }
 numericWeightEDDegree = method(Options => numericalOptions)
 numericWeightEDDegree(List, List, List, List) := o -> (F, G, data, weight) -> (
@@ -652,7 +485,7 @@ averageNumericEDDegree(List, List, ZZ) := o -> (F, G, n) -> (
 
     -- Initial run
     R := ring first F;
-    NCO := newNumericalComputationOptions(dir, F, G, L);
+    NCO := newNumericalComputationOptions(F, G, Submodel => o.Submodel, TempDirectory => o.TempDirectory);
     NCO#"StartData" = SampleGenerator();
     NCO#"TargetData" = apply(#gens R, i -> randomRR());
     NCO#"StartWeight" = NCO#"TargetWeight" = apply(#gens R, i -> 1_R);
