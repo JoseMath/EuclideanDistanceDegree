@@ -10,13 +10,15 @@ newPackage(
     Email => "whuang259@wisc.edu",
     HomePage => ""}
   },
-  Headline => "Euclidean Distance Degrees",
+  Headline => "produce critical equations and compute ED degrees",
   DebuggingMode => false,
-  AuxiliaryFiles => false,
-  PackageImports => {"SimpleDoc","Bertini","NumericalAlgebraicGeometry","Elimination","MonodromySolver"},
+  AuxiliaryFiles => true,
+  PackageImports => {"Elimination","MonodromySolver"},
   PackageExports => {"Bertini","NumericalAlgebraicGeometry"},
-  Configuration => { "Continuation"=>Bertini },
-  CacheExampleOutput => false
+  Configuration => { "Continuation"=>"Bertini" },
+  OptionalComponentsPresent => (readPackage "Bertini").OptionalComponentsPresent,
+  CacheExampleOutput => true,
+  Keywords => {"Applied Algebraic Geometry"}
 )
  
 randomCC=()->random CC
@@ -27,10 +29,10 @@ randomValue=(kk)-> if kk===CC then randomCC() else if kk===RR then randomRR() el
 randomVector=method(Options=>{		})
 randomVector(ZZ,Thing):= o->(n,R) ->apply(n,i->randomValue(R))--list of length n of randomValue
 
-load"./EDD_Determinantal.m2"
-load"./EDD_LeftKernel.m2"
-load"./EDD_Numerical.m2"
-load"./EDD_Parameterization.m2"
+load "./EuclideanDistanceDegree/Determinantal.m2"
+load "./EuclideanDistanceDegree/LeftKernel.m2"
+load "./EuclideanDistanceDegree/Numerical.m2"
+load "./EuclideanDistanceDegree/Parameterization.m2"
 
 export {
   "TempDirectory",
@@ -84,7 +86,7 @@ doc /// -- Package
   Key
     EuclideanDistanceDegree 
   Headline
-    product critical equations and compute ED degrees
+    produce critical equations and compute ED degrees
   Description
     Text
       The Euclidean distance (ED) degree of a varieties arises from the following problem: given a (generic) data point, find the point on a
