@@ -1,20 +1,22 @@
+conormalVariety = method(Options => { })
+conormalVariety(Ideal) := o-> (I) -> (
+    R := ring I;
+    numX := #gens R;
+    kk := coefficientRing R;
+    S := R ** kk[apply(numX, i->"yDual"|i)];
+    primalVars := flatten entries basis({1,0}, S);
+    dualVars := flatten entries basis({0,1}, S);
 
-conormalVariety=method(Options=>{		})
-conormalVariety(Ideal):= o-> (I)->(
-    R:=ring I;
-    numX:=#gens R;
-    kk:=coefficientRing R;
-    S:=R**kk[apply(numX,i->"yDual"|i)];
-    primalVars := flatten entries basis({1,0},S);
-    dualVars := flatten entries basis({0,1},S);
-    rI:=sub(I,S);    
-    jac:=apply(flatten entries gens rI,i->apply(primalVars,j->diff(j,i)));
-    singI:=ideal singularLocus rI;
-    augJac=matrix{dualVars}||matrix jac;
-    CV:=minors(1+codim I,augJac)+rI;
-    CV=saturate(CV,singI);    
+    rI := sub(I, S);    
+    jac := apply(flatten entries gens rI, i->apply(primalVars, j -> diff(j,i)));
+    singI := ideal singularLocus rI;
+    augJac := matrix{dualVars} || matrix jac;
+
+    c := codim I;
+    CV := minors(c + 1, augJac) + rI;
+    CV = saturate(CV, singI);    
     return CV    
-    )
+)
 
 -*
 R=QQ[x0,x1,x2,x3]
@@ -29,36 +31,27 @@ CV1=conormalVariety(I1);
 multidegree CV1
 *-
 
+testEDDegreeConjecture = method(Options => { })
+testEDDegreeConjecture(Ideal) := o-> (I) -> (--Homogeneous ideal
+    -- wu := determinantalUnitEDDegree(flatten entries gens I)    ;
+    wu := leftKernelUnitEDDegree(flatten entries gens I);
+    print("primal UED", wu);
+    -- wg := determinantalGenericEDDegree(flatten entries gens I)  ;  
+    wg := leftKernelGenericEDDegree(flatten entries gens I);  
+    print("primal GED", wg);
 
-testEDDegreeConjecture=method(Options=>{		})
-testEDDegreeConjecture(Ideal):= o-> (I)->(--Homogeneous ideal
---    wu:=determinantalUnitEDDegree(flatten entries gens I)    ;
-    cod=6;
-    wu:=leftKernelUnitEDDegree(theDir,cod,flatten entries gens I)    ;
-    print("primal Unit",wu);
---    wg:=determinantalGenericEDDegree(flatten entries gens I)  ;  
-    wg:=leftKernelGenericEDDegree(theDir,cod,flatten entries gens I)  ;  
-    print("primal Gen",wg);
-    R:=ring I;
-    numX:=#gens R;
-    kk:=coefficientRing R;
-    S:=R**kk[apply(numX,i->"yDual"|i)];
+    CV := conormalVariety(I);
+    S := ring CV;
     primalVars := flatten entries basis({1,0},S);
     dualVars := flatten entries basis({0,1},S);
-    rI:=sub(I,S);    
-    jac:=apply(flatten entries gens rI,i->apply(primalVars,j->diff(j,i)));
-    singI:=ideal singularLocus rI;
-    augJac=matrix{dualVars}||matrix jac;
-    CV:=minors(1+codim I,augJac)+rI;
-    CV=saturate(CV,singI);
-    dualX:=eliminate(primalVars,CV);
-    dualF:=flatten entries gens sub(dualX,kk[dualVars]);
-    dwu:=determinantalUnitEDDegree(dualF)    ;
-    print("dual Unit",dwu);
-    dwg:=determinantalGenericEDDegree(dualF)  ;         
-    print("dual Gen",dwg);
---    return CV    
-    )
+
+    dualX := eliminate(primalVars,CV);
+    dualF := flatten entries gens sub(dualX,kk[dualVars]);
+    dwu := determinantalUnitEDDegree(dualF)    ;
+    print("dual UED",dwu);
+    dwg := determinantalGenericEDDegree(dualF)  ;         
+    print("dual GED",dwg);
+)
 
 R=QQ[x0,x1,x2,x3]
 F={det matrix{{x0,x1},{x2,x3}}}
@@ -83,6 +76,3 @@ codim 4
 --5x5 matices
 --number1=genericEDDegree(X3)-unitEDDegree(X3)
 --number2=genericEDDegree(X2)-unitEDDegree(X2)
-
-
-
